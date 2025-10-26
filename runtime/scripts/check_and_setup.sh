@@ -30,12 +30,23 @@ install_template() {
 
         echo "✅ 템플릿 설치가 완료되었습니다!"
 
-        # .env.local 파일이 없으면 생성
-        if [ ! -f "$WORKSPACE/.env.local" ]; then
+        # AUTH_SECRET 설정
+        if [ -f "$WORKSPACE/.env.local" ]; then
+            # .env.local이 있으면 AUTH_SECRET이 비어있는지 확인
+            if grep -q '^AUTH_SECRET=""' "$WORKSPACE/.env.local" || grep -q '^AUTH_SECRET=$' "$WORKSPACE/.env.local"; then
+                echo "🔑 AUTH_SECRET을 생성합니다..."
+                # 안전한 암호학적 랜덤 문자열 생성 (base64, 32바이트)
+                AUTH_SECRET=$(openssl rand -base64 32)
+                # AUTH_SECRET 값 업데이트
+                sed -i.bak "s|^AUTH_SECRET=.*|AUTH_SECRET=\"$AUTH_SECRET\"|" "$WORKSPACE/.env.local"
+                rm -f "$WORKSPACE/.env.local.bak"
+                echo "✅ AUTH_SECRET이 생성되었습니다!"
+            fi
+        else
+            # .env.local이 없으면 생성
             echo "🔑 .env.local 파일을 생성합니다..."
-            # 안전한 암호학적 랜덤 문자열 생성 (base64, 32바이트)
             AUTH_SECRET=$(openssl rand -base64 32)
-            echo "AUTH_SECRET=$AUTH_SECRET" > "$WORKSPACE/.env.local"
+            echo "AUTH_SECRET=\"$AUTH_SECRET\" # Added by CodeKiwi" > "$WORKSPACE/.env.local"
             echo "✅ .env.local 파일이 생성되었습니다!"
         fi
 
