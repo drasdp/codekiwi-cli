@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# UTF-8 설정
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+
+WORKSPACE="/workspace"
+GITHUB_TOKEN=""  # 여기에 PAT을 입력하세요
+TEMPLATE_REPO="https://${GITHUB_TOKEN}@github.com/aardvarkdev1/codekiwi-template-v0.git"
+
+# 디렉토리가 비어있는지 확인
+is_empty_dir() {
+    [ -z "$(ls -A "$WORKSPACE" 2>/dev/null)" ]
+}
+
+# 템플릿 설치 함수
+install_template() {
+    echo "템플릿을 설치합니다..."
+
+    # git clone으로 템플릿 가져오기
+    git clone "$TEMPLATE_REPO" /tmp/template
+
+    if [ $? -eq 0 ]; then
+        # .git 디렉토리 제외하고 모든 파일 복사
+        cp -r /tmp/template/* "$WORKSPACE/"
+        cp -r /tmp/template/.[!.]* "$WORKSPACE/" 2>/dev/null
+        rm -rf /tmp/template
+
+        echo "✅ 템플릿 설치가 완료되었습니다!"
+        return 0
+    else
+        echo "❌ 템플릿 설치에 실패했습니다."
+        return 1
+    fi
+}
+
+# 메인 로직
+if is_empty_dir; then
+    echo "======================================"
+    echo "  CodeKiwi 초기 설정"
+    echo "======================================"
+    echo ""
+    echo "📁 폴더가 비어있습니다."
+    echo ""
+
+    # 환경 변수로 템플릿 설치 여부 확인 (기본값: yes)
+    INSTALL_TEMPLATE="${INSTALL_TEMPLATE:-yes}"
+
+    if [ "$INSTALL_TEMPLATE" = "yes" ] || [ "$INSTALL_TEMPLATE" = "y" ]; then
+        echo "CodeKiwi 템플릿을 설치합니다..."
+        echo "템플릿에는 기본 개발 환경 설정과 예제 파일이 포함되어 있습니다."
+        echo ""
+
+        if install_template; then
+            echo ""
+            echo "✅ 템플릿 설치 완료!"
+        else
+            echo ""
+            echo "❌ 템플릿 설치에 실패했습니다."
+            echo "컨테이너를 종료합니다."
+            echo ""
+            echo "======================================"
+            echo ""
+            exit 1
+        fi
+    else
+        echo "템플릿 설치를 건너뜁니다."
+        echo "빈 디렉토리로 계속 진행합니다."
+    fi
+
+    echo ""
+    echo "======================================"
+    echo ""
+else
+    echo "✅ 작업 디렉토리에 파일이 존재합니다. 계속 진행합니다."
+fi

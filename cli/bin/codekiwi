@@ -2,17 +2,20 @@
 
 set -e
 
-# 개발 모드 감지 (스크립트가 있는 디렉토리에 docker-compose.yaml이 있으면 개발 모드)
+# 개발 모드 감지 (프로젝트 루트에서 docker/docker-compose.yaml이 있으면 개발 모드)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/docker-compose.yaml" ]; then
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+if [ -f "$PROJECT_ROOT/docker/docker-compose.yaml" ]; then
     # 개발 모드
-    INSTALL_DIR="$SCRIPT_DIR"
+    INSTALL_DIR="$PROJECT_ROOT/docker"
+    INSTANCES_DIR="$PROJECT_ROOT/instances"
 else
     # 설치된 모드
     INSTALL_DIR="$HOME/.codekiwi"
+    INSTANCES_DIR="$INSTALL_DIR/instances"
 fi
 
-INSTANCES_DIR="$INSTALL_DIR/instances"
 COMPOSE_FILE="$INSTALL_DIR/docker-compose.yaml"
 
 # 색상 코드
@@ -183,12 +186,31 @@ cmd_start() {
         fi
     fi
 
+    # 디렉토리가 비어있는지 확인
+    local install_template="yes"
+    if [ -z "$(ls -A "$target_dir" 2>/dev/null)" ]; then
+        echo ""
+        print_info "디렉토리가 비어있습니다."
+        read -p "CodeKiwi 템플릿을 설치하시겠습니까? (Y/n): " answer
+        case "$answer" in
+            [Nn]|[Nn][Oo])
+                install_template="no"
+                print_warning "템플릿 설치를 건너뜁니다."
+                ;;
+            *)
+                install_template="yes"
+                print_info "템플릿을 설치합니다."
+                ;;
+        esac
+        echo ""
+    fi
+
     check_docker
     ensure_instances_dir
 
     # 프로젝트 해시 생성
     local project_hash=$(get_project_hash "$target_dir")
-    CONTAINER_NAME="codekiwi-${project_hash}"
+    CONTAINER_NAME="codekiwi-cli-${project_hash}"
     STATE_FILE=$(get_state_file "$project_hash")
 
     # 이미 실행 중인지 확인
@@ -231,6 +253,7 @@ cmd_start() {
     WEB_PORT="$web_port" \
     DEV_PORT="$dev_port" \
     CONTAINER_NAME="$CONTAINER_NAME" \
+    INSTALL_TEMPLATE="$install_template" \
     docker-compose up -d --build
 
     echo ""
@@ -379,9 +402,9 @@ cmd_update() {
     fi
 
     # GitHub에서 최신 파일 다운로드
-    local repo_url="https://raw.githubusercontent.com/your-username/codekiwi-web/main"
+    local repo_url="https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main"
 
-    curl -fsSL "$repo_url/install.sh" -o /tmp/codekiwi-install.sh
+    curl -fsSL "$repo_url/cli/scripts/install.sh" -o /tmp/codekiwi-install.sh
     bash /tmp/codekiwi-install.sh
     rm /tmp/codekiwi-install.sh
 
@@ -454,7 +477,7 @@ CodeKiwi - 웹 기반 개발 환경
   codekiwi kill ~/project-a
 
 자세한 정보:
-  https://github.com/your-username/codekiwi-web
+  https://github.com/aardvarkdev1/codekiwi-cli
 
 EOF
 }

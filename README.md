@@ -19,7 +19,7 @@ Docker 기반의 통합 개발 환경으로, 좌측에는 AI 코드 에디터, �
 ### 설치 (한 번만)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/codekiwi-web/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/your-username/codekiwi-cli/main/install.sh | bash
 ```
 
 ### 사용
@@ -238,7 +238,7 @@ docker system prune -a
 
 # 제거 및 재설치
 codekiwi uninstall
-curl -fsSL https://raw.githubusercontent.com/your-username/codekiwi-web/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/your-username/codekiwi-cli/main/install.sh | bash
 ```
 
 ## 📚 명령어 레퍼런스

@@ -4,6 +4,9 @@
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
+# 디렉토리 체크 및 템플릿 설정
+/check_and_setup.sh
+
 echo "Creating tmux session with opencode..."
 tmux new-session -d -s opencode bash -c 'opencode; exec bash'
 

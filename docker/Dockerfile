@@ -14,11 +14,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY nginx.conf /etc/nginx/sites-enabled/default
-COPY index.html /var/www/html/index.html
-COPY .tmux.conf /root/.tmux.conf
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+COPY config/nginx.conf /etc/nginx/sites-enabled/default
+COPY web/index.html /var/www/html/index.html
+COPY config/.tmux.conf /root/.tmux.conf
+COPY scripts/start.sh /start.sh
+COPY scripts/check_and_setup.sh /check_and_setup.sh
+RUN chmod +x /start.sh /check_and_setup.sh
 
 # workspace 디렉토리 생성 (마운트 포인트)
 RUN mkdir -p /workspace

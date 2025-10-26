@@ -57,25 +57,39 @@ fi
 mkdir -p "$INSTALL_DIR"
 
 # GitHub 리포지토리 URL
-REPO_URL="https://raw.githubusercontent.com/your-username/codekiwi-web/main"
+REPO_URL="https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main"
 
 # 필요한 파일 다운로드
 print_info "필요한 파일을 다운로드합니다..."
 
-files=(
-    "codekiwi"
+# CLI 파일 다운로드
+print_info "다운로드 중: codekiwi"
+if ! curl -fsSL "$REPO_URL/cli/bin/codekiwi" -o "$INSTALL_DIR/codekiwi"; then
+    print_error "codekiwi 다운로드 실패"
+    exit 1
+fi
+
+# Docker 관련 파일 다운로드
+docker_files=(
     "Dockerfile"
     "docker-compose.yaml"
-    "start.sh"
-    "nginx.conf"
-    "index.html"
-    ".tmux.conf"
-    ".bashrc"
+    "scripts/start.sh"
+    "scripts/check_and_setup.sh"
+    "config/nginx.conf"
+    "config/.tmux.conf"
+    "config/.bashrc"
+    "web/index.html"
 )
 
-for file in "${files[@]}"; do
+for file in "${docker_files[@]}"; do
+    # 서브디렉토리 생성
+    file_dir=$(dirname "$file")
+    if [ "$file_dir" != "." ]; then
+        mkdir -p "$INSTALL_DIR/$file_dir"
+    fi
+
     print_info "다운로드 중: $file"
-    if ! curl -fsSL "$REPO_URL/$file" -o "$INSTALL_DIR/$file"; then
+    if ! curl -fsSL "$REPO_URL/docker/$file" -o "$INSTALL_DIR/$file"; then
         print_error "$file 다운로드 실패"
         exit 1
     fi
@@ -83,7 +97,8 @@ done
 
 # 실행 권한 부여
 chmod +x "$INSTALL_DIR/codekiwi"
-chmod +x "$INSTALL_DIR/start.sh"
+chmod +x "$INSTALL_DIR/scripts/start.sh"
+chmod +x "$INSTALL_DIR/scripts/check_and_setup.sh"
 
 print_success "파일 다운로드 완료"
 
@@ -108,7 +123,7 @@ print_success "글로벌 명령어 설치 완료"
 # Docker 이미지 빌드
 print_info "Docker 이미지를 빌드합니다... (1-2분 소요)"
 cd "$INSTALL_DIR"
-docker build -t codekiwi:latest . > /dev/null 2>&1
+docker build -t codekiwi-cli:latest . > /dev/null 2>&1
 
 print_success "Docker 이미지 빌드 완료"
 
@@ -135,5 +150,5 @@ echo "  codekiwi status      - 상태 확인"
 echo "  codekiwi help        - 도움말"
 echo ""
 echo "📚 자세한 정보:"
-echo "  https://github.com/your-username/codekiwi-web"
+echo "  https://github.com/aardvarkdev1/codekiwi-cli"
 echo ""
