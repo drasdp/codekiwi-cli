@@ -7,14 +7,11 @@ export LC_ALL=C.UTF-8
 echo "Creating tmux session with opencode..."
 tmux new-session -d -s opencode bash -c 'opencode; exec bash'
 
-echo "Creating tmux session for devserver..."
-tmux new-session -d -s devserver bash -c 'cd /workspace && npm install && npm run dev; exec bash'
+echo "Starting devserver in background..."
+cd /workspace && npm install && npm run dev &
 
 echo "Starting ttyd on port 7681 (opencode)..."
 ttyd -p 7681 -t fontSize=14 -t 'theme={"background":"#1e1e1e"}' tmux attach-session -t opencode &
-
-echo "Starting ttyd on port 7682 (devserver)..."
-ttyd -p 7682 -t fontSize=14 -t 'theme={"background":"#1e1e1e"}' tmux attach-session -t devserver &
 
 echo "Starting nginx..."
 nginx -g 'daemon off;'
