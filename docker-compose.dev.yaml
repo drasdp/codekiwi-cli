@@ -3,13 +3,15 @@ services:
     build:
       context: ./runtime
       dockerfile: Dockerfile
-    image: codekiwi-runtime:dev
-    container_name: ${CONTAINER_NAME:-codekiwi-runtime}
+    image: ${CODEKIWI_IMAGE_NAME:-codekiwi-runtime}:${CODEKIWI_IMAGE_TAG_DEV:-dev}
+    container_name: ${CONTAINER_NAME:-${CODEKIWI_CONTAINER_NAME_PREFIX:-codekiwi-runtime}}
     ports:
-      - "${WEB_PORT:-8080}:80"
-      - "${DEV_PORT:-3000}:3000"
+      - "${WEB_PORT:-${CODEKIWI_WEB_PORT_DEFAULT:-8080}}:${CODEKIWI_NGINX_PORT:-80}"
+      - "${DEV_PORT:-${CODEKIWI_DEV_PORT_DEFAULT:-3000}}:${CODEKIWI_DEV_PORT_DEFAULT:-3000}"
     volumes:
-      - ${WORKSPACE_DIR}:/workspace
+      - ${WORKSPACE_DIR}:${CODEKIWI_WORKSPACE_DIR:-/workspace}
     environment:
-      - INSTALL_TEMPLATE=${INSTALL_TEMPLATE:-yes}
-    restart: unless-stopped
+      - INSTALL_TEMPLATE=${INSTALL_TEMPLATE:-${CODEKIWI_INSTALL_TEMPLATE_DEFAULT:-yes}}
+    restart: ${CODEKIWI_RESTART_POLICY:-unless-stopped}
+    env_file:
+      - config.env

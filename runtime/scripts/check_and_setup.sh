@@ -4,9 +4,12 @@
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
-WORKSPACE="/workspace"
+# Load configuration from environment (set by docker-compose)
+WORKSPACE="${CODEKIWI_WORKSPACE_DIR:-/workspace}"
 GITHUB_TOKEN=""  # 여기에 PAT을 입력하세요
-TEMPLATE_REPO="https://${GITHUB_TOKEN}@github.com/aardvarkdev1/codekiwi-template-v0.git"
+TEMPLATE_REPO_NAME="${CODEKIWI_TEMPLATE_REPO_NAME:-codekiwi-template-v0}"
+GITHUB_ORG="${CODEKIWI_GITHUB_ORG:-aardvarkdev1}"
+TEMPLATE_REPO="https://${GITHUB_TOKEN}@github.com/${GITHUB_ORG}/${TEMPLATE_REPO_NAME}.git"
 
 # 디렉토리가 비어있는지 확인
 is_empty_dir() {
@@ -44,7 +47,7 @@ if is_empty_dir; then
     echo ""
 
     # 환경 변수로 템플릿 설치 여부 확인 (기본값: yes)
-    INSTALL_TEMPLATE="${INSTALL_TEMPLATE:-yes}"
+    INSTALL_TEMPLATE="${INSTALL_TEMPLATE:-${CODEKIWI_INSTALL_TEMPLATE_DEFAULT:-yes}}"
 
     if [ "$INSTALL_TEMPLATE" = "yes" ] || [ "$INSTALL_TEMPLATE" = "y" ]; then
         echo "CodeKiwi 템플릿을 설치합니다..."

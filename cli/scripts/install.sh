@@ -2,6 +2,14 @@
 
 set -e
 
+# Load configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+if [ -f "$PROJECT_ROOT/lib/config-loader.sh" ]; then
+    source "$PROJECT_ROOT/lib/config-loader.sh"
+fi
+
 # 색상 코드
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -47,7 +55,7 @@ fi
 print_success "Docker 확인 완료"
 
 # 설치 디렉토리 생성
-INSTALL_DIR="$HOME/.codekiwi"
+INSTALL_DIR="${CODEKIWI_INSTALL_DIR:-$HOME/.codekiwi}"
 print_info "설치 디렉토리: $INSTALL_DIR"
 
 if [ -d "$INSTALL_DIR" ]; then
@@ -55,9 +63,10 @@ if [ -d "$INSTALL_DIR" ]; then
 fi
 
 mkdir -p "$INSTALL_DIR"
+mkdir -p "$INSTALL_DIR/lib"
 
 # GitHub 리포지토리 URL
-REPO_URL="https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main"
+REPO_URL="${CODEKIWI_REPO_BASE_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
 
 # 필요한 파일 다운로드
 print_info "필요한 파일을 다운로드합니다..."
@@ -66,6 +75,20 @@ print_info "필요한 파일을 다운로드합니다..."
 print_info "다운로드 중: codekiwi"
 if ! curl -fsSL "$REPO_URL/cli/bin/codekiwi" -o "$INSTALL_DIR/codekiwi"; then
     print_error "codekiwi 다운로드 실패"
+    exit 1
+fi
+
+# 설정 파일 다운로드
+print_info "다운로드 중: config.env"
+if ! curl -fsSL "$REPO_URL/config.env" -o "$INSTALL_DIR/config.env"; then
+    print_error "config.env 다운로드 실패"
+    exit 1
+fi
+
+# config-loader 다운로드
+print_info "다운로드 중: lib/config-loader.sh"
+if ! curl -fsSL "$REPO_URL/lib/config-loader.sh" -o "$INSTALL_DIR/lib/config-loader.sh"; then
+    print_error "config-loader.sh 다운로드 실패"
     exit 1
 fi
 
@@ -78,6 +101,7 @@ fi
 
 # 실행 권한 부여
 chmod +x "$INSTALL_DIR/codekiwi"
+chmod +x "$INSTALL_DIR/lib/config-loader.sh"
 
 print_success "파일 다운로드 완료"
 
@@ -101,7 +125,9 @@ print_success "글로벌 명령어 설치 완료"
 
 # Docker 이미지 pull
 print_info "Docker 이미지를 다운로드합니다..."
-docker pull aardvarkdev1/codekiwi-runtime:latest
+IMAGE_NAME="${CODEKIWI_FULL_IMAGE_NAME:-aardvarkdev1/codekiwi-runtime}"
+IMAGE_TAG="${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}"
+docker pull "$IMAGE_NAME:$IMAGE_TAG"
 
 print_success "Docker 이미지 다운로드 완료"
 

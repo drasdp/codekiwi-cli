@@ -2,21 +2,39 @@
 
 set -e
 
-# 개발 모드 감지 (프로젝트 루트에서 docker-compose.dev.yaml이 있으면 개발 모드)
+# 스크립트 디렉토리 결정
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-if [ -f "$PROJECT_ROOT/docker-compose.dev.yaml" ]; then
+# 개발 모드 감지 - cli/bin 구조가 있으면 개발 모드
+if [ -f "$SCRIPT_DIR/../../docker-compose.dev.yaml" ]; then
+    # 개발 모드: PROJECT_ROOT/cli/bin/codekiwi 구조
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    CONFIG_BASE="$PROJECT_ROOT"
+else
+    # 설치 모드: ~/.codekiwi/codekiwi 구조 (cli/bin 디렉토리 없음)
+    PROJECT_ROOT=""
+    CONFIG_BASE="$HOME/.codekiwi"
+fi
+
+# Load configuration
+if [ -f "$CONFIG_BASE/lib/config-loader.sh" ]; then
+    source "$CONFIG_BASE/lib/config-loader.sh"
+else
+    echo "Error: config-loader.sh not found at $CONFIG_BASE/lib/config-loader.sh" >&2
+    exit 1
+fi
+
+if [ -n "$PROJECT_ROOT" ] && [ -f "$PROJECT_ROOT/$CODEKIWI_COMPOSE_FILE_DEV" ]; then
     # 개발 모드
     INSTALL_DIR="$PROJECT_ROOT"
     INSTANCES_DIR="$PROJECT_ROOT/instances"
 else
     # 설치된 모드
-    INSTALL_DIR="$HOME/.codekiwi"
+    INSTALL_DIR="${CODEKIWI_INSTALL_DIR:-$HOME/.codekiwi}"
     INSTANCES_DIR="$INSTALL_DIR/instances"
 fi
 
-COMPOSE_FILE="$INSTALL_DIR/docker-compose.yaml"
+COMPOSE_FILE="$INSTALL_DIR/${CODEKIWI_COMPOSE_FILE_PROD:-docker-compose.yaml}"
 
 # 색상 코드
 GREEN='\033[0;32m'
@@ -223,8 +241,8 @@ cmd_start() {
     fi
 
     # 사용 가능한 포트 찾기
-    local web_port=$(find_available_port 8080)
-    local dev_port=$(find_available_port 3000)
+    local web_port=$(find_available_port ${CODEKIWI_WEB_PORT_DEFAULT:-8080})
+    local dev_port=$(find_available_port ${CODEKIWI_DEV_PORT_DEFAULT:-3000})
 
     echo ""
     echo "======================================"
@@ -249,7 +267,7 @@ cmd_start() {
     echo ""
 
     # 개발 모드 확인 (docker-compose.dev.yaml이 있으면 로컬 빌드)
-    if [ -f "$INSTALL_DIR/docker-compose.dev.yaml" ]; then
+    if [ -f "$INSTALL_DIR/$CODEKIWI_COMPOSE_FILE_DEV" ]; then
         print_info "개발 모드: 로컬 이미지 빌드 중..."
         # 백그라운드로 시작한 후 로그를 따라감
         WORKSPACE_DIR="$target_dir" \
@@ -257,7 +275,7 @@ cmd_start() {
         DEV_PORT="$dev_port" \
         CONTAINER_NAME="$CONTAINER_NAME" \
         INSTALL_TEMPLATE="$install_template" \
-        docker-compose -f docker-compose.dev.yaml up -d --build
+        docker-compose -f "$CODEKIWI_COMPOSE_FILE_DEV" up -d --build
     else
         # 프로덕션 모드: Docker Hub 이미지 사용
         WORKSPACE_DIR="$target_dir" \
@@ -439,17 +457,26 @@ cmd_update() {
     fi
 
     # GitHub에서 최신 파일 다운로드
-    local repo_url="https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main"
+    local repo_url="${CODEKIWI_REPO_BASE_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
 
     print_info "CLI 파일을 업데이트합니다..."
     curl -fsSL "$repo_url/cli/bin/codekiwi" -o "$INSTALL_DIR/codekiwi"
     chmod +x "$INSTALL_DIR/codekiwi"
 
+    print_info "설정 파일을 업데이트합니다..."
+    curl -fsSL "$repo_url/config.env" -o "$INSTALL_DIR/config.env"
+
+    print_info "config-loader를 업데이트합니다..."
+    mkdir -p "$INSTALL_DIR/lib"
+    curl -fsSL "$repo_url/lib/config-loader.sh" -o "$INSTALL_DIR/lib/config-loader.sh"
+
     print_info "docker-compose.yaml을 업데이트합니다..."
     curl -fsSL "$repo_url/docker-compose.yaml" -o "$INSTALL_DIR/docker-compose.yaml"
 
     print_info "Docker 이미지를 업데이트합니다..."
-    docker pull aardvarkdev1/codekiwi-runtime:latest
+    local image_name="${CODEKIWI_FULL_IMAGE_NAME:-aardvarkdev1/codekiwi-runtime}"
+    local image_tag="${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}"
+    docker pull "$image_name:$image_tag"
 
     print_success "업데이트가 완료되었습니다."
 }
