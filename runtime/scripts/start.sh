@@ -24,20 +24,43 @@ fi
 echo "Creating tmux session with opencode..."
 tmux new-session -d -s opencode bash -c "cd \"$WORKSPACE\" && opencode; exec bash"
 
-echo "Starting devserver in background..."
-cd "$WORKSPACE" && npm install && npm run dev &
+echo "Checking for package.json..."
+if [ -f "$WORKSPACE/package.json" ]; then
+    echo "package.json found, starting dev server..."
+    cd "$WORKSPACE"
 
-echo "Waiting for dev server to start..."
-for i in {1..30}; do
-    if curl -s http://localhost:$DEV_PORT > /dev/null 2>&1; then
-        echo "Dev server is ready!"
-        # Create ready flag for health check
-        touch /tmp/services_ready
-        break
+    # Install dependencies if node_modules doesn't exist
+    if [ ! -d "$WORKSPACE/node_modules" ]; then
+        echo "Installing dependencies..."
+        npm install
     fi
-    echo "Waiting for dev server... ($i/30)"
-    sleep 1
-done
+
+    echo "Starting devserver in background..."
+    npm run dev &
+
+    echo "Waiting for dev server to start..."
+    for i in {1..60}; do
+        if curl -s http://localhost:$DEV_PORT > /dev/null 2>&1; then
+            echo "Dev server is ready!"
+            # Create ready flag for health check
+            touch /tmp/services_ready
+            break
+        fi
+        echo "Waiting for dev server... ($i/60)"
+        sleep 1
+    done
+
+    if [ ! -f /tmp/services_ready ]; then
+        echo "Warning: Dev server did not start within 60 seconds"
+        echo "Continuing anyway..."
+        touch /tmp/services_ready
+    fi
+else
+    echo "No package.json found. Skipping dev server."
+    echo "Dev server will be available after template installation."
+    # Create ready flag anyway for health check
+    touch /tmp/services_ready
+fi
 
 echo "Starting ttyd on port $TTYD_PORT (opencode)..."
 ttyd -p "$TTYD_PORT" -t fontSize=14 -t 'theme={"background":"#1e1e1e"}' tmux attach-session -t opencode &

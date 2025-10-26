@@ -29,6 +29,15 @@ install_template() {
         rm -rf /tmp/template
 
         echo "✅ 템플릿 설치가 완료되었습니다!"
+
+        # package.json이 있으면 의존성 설치
+        if [ -f "$WORKSPACE/package.json" ]; then
+            echo "📦 의존성을 설치합니다..."
+            cd "$WORKSPACE"
+            npm install
+            echo "✅ 의존성 설치 완료!"
+        fi
+
         return 0
     else
         echo "❌ 템플릿 설치에 실패했습니다."
