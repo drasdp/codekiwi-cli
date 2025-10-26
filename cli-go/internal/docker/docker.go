@@ -188,6 +188,37 @@ func WaitForContainer(containerName string, timeout time.Duration) error {
 	return fmt.Errorf("timeout waiting for container %s to start", containerName)
 }
 
+// WaitForHealthy waits for a container to pass its health check
+func WaitForHealthy(containerName string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	startTime := time.Now()
+
+	for time.Now().Before(deadline) {
+		// Check Docker health status
+		cmd := exec.Command("docker", "inspect",
+			"--format", "{{.State.Health.Status}}",
+			containerName)
+		output, err := cmd.Output()
+		if err == nil {
+			status := strings.TrimSpace(string(output))
+			if status == "healthy" {
+				fmt.Println() // Clear the progress line
+				return nil
+			}
+			// Show progress with elapsed time
+			elapsed := time.Since(startTime).Seconds()
+			remaining := time.Until(deadline).Seconds()
+			fmt.Printf("\r⏳ Checking health status... (%s) [%.0fs elapsed, %.0fs remaining]",
+				status, elapsed, remaining)
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
+	fmt.Println() // New line after progress indicator
+	return fmt.Errorf("container %s did not become healthy within %v", containerName, timeout)
+}
+
 // GetContainerLogs retrieves logs from a container
 func GetContainerLogs(containerName string, tail int) (string, error) {
 	cmd := exec.Command("docker", "logs", "--tail", fmt.Sprintf("%d", tail), containerName)

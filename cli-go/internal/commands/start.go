@@ -171,9 +171,17 @@ func runStart(cmd *cobra.Command, args []string) error {
 	platform.PrintURL("Web URL", instance.GetURL())
 	platform.PrintInfo(fmt.Sprintf("Container: %s", containerName))
 
-	// Wait a bit for services to fully start
-	platform.PrintInfo("Waiting for services to start...")
-	time.Sleep(3 * time.Second)
+	// Wait for services to be ready using health check
+	platform.PrintInfo("Waiting for services to be ready...")
+
+	// Wait for container to become healthy (with 60 second timeout)
+	healthErr := docker.WaitForHealthy(containerName, 60*time.Second)
+	if healthErr != nil {
+		platform.PrintWarning(fmt.Sprintf("Services may not be fully ready: %v", healthErr))
+		platform.PrintWarning("You can manually refresh the browser once services are ready")
+	} else {
+		platform.PrintSuccess("All services are ready!")
+	}
 
 	// Open browser
 	if !noOpen && platform.CanOpenBrowser() {

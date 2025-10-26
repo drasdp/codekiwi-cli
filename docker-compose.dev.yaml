@@ -15,3 +15,9 @@ services:
     restart: ${CODEKIWI_RESTART_POLICY:-unless-stopped}
     env_file:
       - config.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 10s

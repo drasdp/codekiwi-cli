@@ -31,6 +31,8 @@ echo "Waiting for dev server to start..."
 for i in {1..30}; do
     if curl -s http://localhost:$DEV_PORT > /dev/null 2>&1; then
         echo "Dev server is ready!"
+        # Create ready flag for health check
+        touch /tmp/services_ready
         break
     fi
     echo "Waiting for dev server... ($i/30)"
