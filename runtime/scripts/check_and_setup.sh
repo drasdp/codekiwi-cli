@@ -6,10 +6,9 @@ export LC_ALL=C.UTF-8
 
 # Load configuration from environment (set by docker-compose)
 WORKSPACE="${CODEKIWI_WORKSPACE_DIR:-/workspace}"
-GITHUB_TOKEN=""  # 여기에 PAT을 입력하세요
-TEMPLATE_REPO_NAME="${CODEKIWI_TEMPLATE_REPO_NAME:-codekiwi-template-v0}"
-GITHUB_ORG="${CODEKIWI_GITHUB_ORG:-aardvarkdev1}"
-TEMPLATE_REPO="https://${GITHUB_TOKEN}@github.com/${GITHUB_ORG}/${TEMPLATE_REPO_NAME}.git"
+
+# 템플릿 저장소 URL (public repo)
+TEMPLATE_REPO="${CODEKIWI_TEMPLATE_GITHUB_URL:-https://github.com/aardvark-team-dev/codekiwi-template.git}"
 
 # 디렉토리가 비어있는지 확인
 is_empty_dir() {
