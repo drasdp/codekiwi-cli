@@ -115,14 +115,12 @@ save_state() {
     local project_hash="$1"
     local workspace="$2"
     local web_port="$3"
-    local dev_port="$4"
-    local container_name="$5"
+    local container_name="$4"
     local state_file=$(get_state_file "$project_hash")
 
     cat > "$state_file" <<EOF
 WORKSPACE_DIR="$workspace"
 WEB_PORT=$web_port
-DEV_PORT=$dev_port
 CONTAINER_NAME="$container_name"
 STARTED_AT=$(date +%s)
 PID=$$
@@ -242,7 +240,6 @@ cmd_start() {
 
     # 사용 가능한 포트 찾기
     local web_port=$(find_available_port ${CODEKIWI_WEB_PORT_DEFAULT:-8080})
-    local dev_port=$(find_available_port ${CODEKIWI_DEV_PORT_DEFAULT:-3000})
 
     echo ""
     echo "======================================"
@@ -251,14 +248,13 @@ cmd_start() {
     echo ""
     print_info "작업 디렉토리: $target_dir"
     print_info "웹 포트: $web_port"
-    print_info "개발 서버 포트: $dev_port"
     echo ""
 
     # 종료 시그널 트랩 설정
     trap cleanup SIGINT SIGTERM
 
     # 상태 저장
-    save_state "$project_hash" "$target_dir" "$web_port" "$dev_port" "$CONTAINER_NAME"
+    save_state "$project_hash" "$target_dir" "$web_port" "$CONTAINER_NAME"
 
     # Docker Compose 실행 (포그라운드)
     cd "$INSTALL_DIR"
@@ -272,7 +268,6 @@ cmd_start() {
         # 백그라운드로 시작한 후 로그를 따라감
         WORKSPACE_DIR="$target_dir" \
         WEB_PORT="$web_port" \
-        DEV_PORT="$dev_port" \
         CONTAINER_NAME="$CONTAINER_NAME" \
         INSTALL_TEMPLATE="$install_template" \
         docker-compose -f "$CODEKIWI_COMPOSE_FILE_DEV" up -d --build
@@ -280,7 +275,6 @@ cmd_start() {
         # 프로덕션 모드: Docker Hub 이미지 사용
         WORKSPACE_DIR="$target_dir" \
         WEB_PORT="$web_port" \
-        DEV_PORT="$dev_port" \
         CONTAINER_NAME="$CONTAINER_NAME" \
         INSTALL_TEMPLATE="$install_template" \
         docker-compose up -d
@@ -353,7 +347,6 @@ cmd_list() {
                 echo -e "${CYAN}[인스턴스 #$count]${NC}"
                 echo "  📁 디렉토리: $WORKSPACE_DIR"
                 echo "  🌐 웹: http://localhost:${WEB_PORT}"
-                echo "  🔌 개발 서버: http://localhost:${DEV_PORT}"
                 echo "  🐳 컨테이너: $CONTAINER_NAME"
 
                 if [ -n "$STARTED_AT" ]; then

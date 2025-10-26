@@ -164,10 +164,11 @@ CodeKiwi는 **nginx 기반 경로 라우팅**을 통해 단일 포트로 여러 
       ├─ /preview/             → 웹 애플리케이션 루트
       └─ /preview/codekiwi-dashboard → 대시보드
 
-🔒 내부 포트 (외부 노출 안 됨)
+🔒 내부 포트 (호스트에 노출 안 됨)
    - dev server :3000 (컨테이너 내부)
    - ttyd :7681 (컨테이너 내부)
-   → 모두 nginx를 통해서만 접근 가능
+   → 모두 nginx 리버스 프록시를 통해서만 접근 가능
+   → 호스트의 localhost:3000은 사용 불가
 ```
 
 ### 멀티 인스턴스 포트 할당
@@ -203,7 +204,10 @@ $ cd ~/project-c && codekiwi
 
 - ✅ **단순함**: 포트 하나만 기억하면 됨 (localhost:8080)
 - ✅ **보안**: 최소한의 포트만 노출 (공격 표면 최소화)
+  - dev server(3000), ttyd(7681)는 호스트에 직접 노출 안 됨
+  - nginx가 유일한 진입점 역할
 - ✅ **멀티 인스턴스**: 포트 충돌 없이 여러 프로젝트 동시 실행
+  - 인스턴스당 포트 1개만 필요 (WEB_PORT)
 - ✅ **일관성**: 모든 서비스가 동일한 경로 패턴 사용
 
 ## ⚙️ 시스템 요구사항
@@ -322,12 +326,19 @@ cd codekiwi-web
 모든 설정은 `config.env`에서 중앙 관리됩니다:
 
 ```bash
-# 주요 설정 값
-CODEKIWI_WEB_PORT_DEFAULT=8080      # 웹 인터페이스 기본 포트
-CODEKIWI_DEV_PORT_DEFAULT=3000      # 개발 서버 기본 포트
-CODEKIWI_TTYD_PORT=7681             # 웹 터미널 포트
+# 포트 설정
+CODEKIWI_WEB_PORT_DEFAULT=8080      # 웹 인터페이스 포트 (호스트에 노출)
+CODEKIWI_DEV_PORT_DEFAULT=3000      # 개발 서버 내부 포트 (컨테이너 내부 전용, 호스트에 노출 안 됨)
+CODEKIWI_TTYD_PORT=7681             # 웹 터미널 내부 포트 (컨테이너 내부 전용, 호스트에 노출 안 됨)
+CODEKIWI_NGINX_PORT=80              # Nginx 내부 포트 (컨테이너 내부 전용)
+
+# 경로 설정
 CODEKIWI_WORKSPACE_DIR=/workspace   # 컨테이너 내 작업 디렉토리
 ```
+
+**포트 노출 정책:**
+- **호스트에 노출**: `WEB_PORT` (8080) 하나만
+- **내부 전용**: dev server(3000), ttyd(7681) - nginx를 통해서만 접근 가능
 
 설정 로드 방식:
 - **CLI**: `lib/config-loader.sh`를 source하여 Bash 변수로 로드
