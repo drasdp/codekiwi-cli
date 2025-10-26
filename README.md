@@ -68,9 +68,7 @@ codekiwi
 `codekiwi` 명령 실행 시:
 
 1. **설정 로드**: `~/.codekiwi/config.env`에서 설정 값 로드
-2. **포트 할당**:
-   - 웹 인터페이스: 8080부터 사용 가능한 포트 자동 찾기
-   - 개발 서버: 3000부터 사용 가능한 포트 자동 찾기
+2. **포트 할당**: WEB_PORT 8080부터 사용 가능한 포트 자동 찾기
 3. **컨테이너 시작**: Docker Compose로 컨테이너 실행
    - 작업 디렉토리를 `/workspace`로 마운트
    - 환경 변수 전달 (템플릿 설치 여부 등)
@@ -89,8 +87,9 @@ codekiwi
    - **개발 서버**: `npm install && npm run dev` 백그라운드 실행
    - **웹 터미널**: ttyd가 7681 포트에서 터미널 제공
    - **프록시 서버**: nginx가 80 포트에서 다음을 프록시:
-     - `/` → 웹 터미널 (ttyd)
-     - `/devserver/` → 개발 서버 (포트 3000)
+     - `/` → 웹 UI (index.html)
+     - `/terminal/` → 웹 터미널 (ttyd)
+     - `/preview/` → 개발 서버
 
 ## 📖 사용법
 
@@ -118,11 +117,11 @@ codekiwi kill --all
 ```bash
 # 터미널 1
 cd ~/project-a
-codekiwi  # localhost:8080, localhost:3000
+codekiwi  # localhost:8080
 
 # 터미널 2
 cd ~/project-b
-codekiwi  # localhost:8081, localhost:3001 (자동 할당)
+codekiwi  # localhost:8081 (자동 할당)
 
 # 터미널 3
 codekiwi list  # 모든 실행 중인 인스턴스 확인
