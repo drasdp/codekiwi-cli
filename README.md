@@ -31,8 +31,24 @@ Docker 기반의 통합 개발 환경으로, 좌측에는 AI 코드 에디터, �
 
 ### 1️⃣ 설치 (한 번만)
 
+#### macOS / Linux
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/cli/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-web/main/install/install.sh | bash
+```
+
+#### Windows
+
+Command Prompt(cmd)를 관리자 권한으로 실행한 후:
+
+```cmd
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-web/main/install/install.bat -o %TEMP%\codekiwi-install.bat && %TEMP%\codekiwi-install.bat
+```
+
+또는 PowerShell에서:
+
+```powershell
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-web/main/install/install.bat -o %TEMP%\codekiwi-install.bat && %TEMP%\codekiwi-install.bat
 ```
 
 #### 설치 과정 상세
