@@ -28,7 +28,6 @@ load_config() {
     # Compute derived values
     export CODEKIWI_INSTALL_DIR="$HOME/$CODEKIWI_INSTALL_DIR_NAME"
     export CODEKIWI_FULL_IMAGE_NAME="$CODEKIWI_IMAGE_REGISTRY/$CODEKIWI_IMAGE_NAME"
-    export CODEKIWI_REPO_BASE_URL="https://raw.githubusercontent.com/$CODEKIWI_GITHUB_ORG/$CODEKIWI_GITHUB_REPO/$CODEKIWI_GITHUB_BRANCH"
 }
 
 # Get full image name with tag

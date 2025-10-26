@@ -66,7 +66,7 @@ mkdir -p "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR/lib"
 
 # GitHub 리포지토리 URL
-REPO_URL="${CODEKIWI_REPO_BASE_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
+REPO_URL="${RAW_CODEKIWI_GITHUB_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
 
 # 필요한 파일 다운로드
 print_info "필요한 파일을 다운로드합니다..."

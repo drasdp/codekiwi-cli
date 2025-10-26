@@ -511,7 +511,7 @@ cmd_update() {
     fi
 
     # GitHub에서 최신 파일 다운로드
-    local repo_url="${CODEKIWI_REPO_BASE_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
+    local repo_url="${RAW_CODEKIWI_GITHUB_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
 
     print_info "CLI 파일을 업데이트합니다..."
     curl -fsSL "$repo_url/cli/bin/codekiwi" -o "$INSTALL_DIR/codekiwi"
