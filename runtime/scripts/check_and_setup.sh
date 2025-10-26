@@ -30,6 +30,15 @@ install_template() {
 
         echo "✅ 템플릿 설치가 완료되었습니다!"
 
+        # .env.local 파일이 없으면 생성
+        if [ ! -f "$WORKSPACE/.env.local" ]; then
+            echo "🔑 .env.local 파일을 생성합니다..."
+            # 안전한 암호학적 랜덤 문자열 생성 (base64, 32바이트)
+            AUTH_SECRET=$(openssl rand -base64 32)
+            echo "AUTH_SECRET=$AUTH_SECRET" > "$WORKSPACE/.env.local"
+            echo "✅ .env.local 파일이 생성되었습니다!"
+        fi
+
         # package.json이 있으면 의존성 설치
         if [ -f "$WORKSPACE/package.json" ]; then
             echo "📦 의존성을 설치합니다..."
