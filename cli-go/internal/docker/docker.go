@@ -245,6 +245,16 @@ func FollowContainerLogs(containerName string) error {
 	return cmd.Run()
 }
 
+// FollowContainerLogsWithContext follows container logs with cancellable context
+func FollowContainerLogsWithContext(ctx context.Context, containerName string) {
+	cmd := exec.CommandContext(ctx, "docker", "logs", "-f", containerName)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Run and ignore context cancellation errors
+	cmd.Run()
+}
+
 // PullImage pulls the Docker image
 func PullImage(imageName string) error {
 	platform.PrintInfo(fmt.Sprintf("Pulling image %s...", imageName))

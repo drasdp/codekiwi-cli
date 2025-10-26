@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -212,49 +213,64 @@ func runStart(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Foreground mode (default) - setup signal handler
+	// Foreground mode (default) - setup signal handler with context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create channels for signal and logs completion
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	// os.Interrupt handles Ctrl+C on all platforms (Unix: SIGINT, Windows: CTRL_C_EVENT)
 
-	// Cleanup function
-	cleanup := func() {
-		platform.PrintWarning("\nReceived interrupt signal, stopping CodeKiwi...")
-
-		// Try to stop using docker-compose
-		if err := docker.ComposeDown(containerName, projectPath); err != nil {
-			// Fallback to direct docker commands if compose fails
-			platform.PrintWarning("Trying alternative stop method...")
-			if stopErr := docker.StopContainer(containerName); stopErr != nil {
-				platform.PrintError(fmt.Sprintf("Failed to stop container: %v", stopErr))
-			}
-			if rmErr := docker.RemoveContainer(containerName); rmErr != nil {
-				platform.PrintWarning("Failed to remove container")
-			}
-		}
-
-		// Delete state file
-		if err := instance.Delete(); err != nil {
-			platform.PrintWarning("Failed to clean up state file")
-		}
-
-		platform.PrintSuccess("CodeKiwi stopped gracefully")
-	}
-
-	// Handle signal in goroutine
-	go func() {
-		<-sigChan
-		cleanup()
-		os.Exit(0)
-	}()
+	logsDone := make(chan struct{})
 
 	// Print instructions for foreground mode
 	fmt.Println()
 	platform.PrintInfo("Following container logs (press Ctrl+C to stop)...")
 	fmt.Println()
 
-	// Stream logs in foreground
-	return docker.FollowContainerLogs(containerName)
+	// Stream logs in background goroutine
+	go func() {
+		docker.FollowContainerLogsWithContext(ctx, containerName)
+		close(logsDone)
+	}()
+
+	// Wait for signal or logs to finish naturally
+	select {
+	case <-sigChan:
+		platform.PrintWarning("\nReceived interrupt signal, stopping CodeKiwi...")
+		cancel()      // Stop log streaming
+		<-logsDone    // Wait for logs goroutine to finish
+	case <-logsDone:
+		// Logs finished naturally (container stopped)
+	}
+
+	// Cleanup (always executed before exit)
+	cleanupInstance(instance, containerName, projectPath)
+
+	return nil
+}
+
+// cleanupInstance stops and removes a CodeKiwi instance
+func cleanupInstance(instance *state.Instance, containerName, projectPath string) {
+	// Try to stop using docker-compose
+	if err := docker.ComposeDown(containerName, projectPath); err != nil {
+		// Fallback to direct docker commands if compose fails
+		platform.PrintWarning("Trying alternative stop method...")
+		if stopErr := docker.StopContainer(containerName); stopErr != nil {
+			platform.PrintError(fmt.Sprintf("Failed to stop container: %v", stopErr))
+		}
+		if rmErr := docker.RemoveContainer(containerName); rmErr != nil {
+			platform.PrintWarning("Failed to remove container")
+		}
+	}
+
+	// Delete state file
+	if err := instance.Delete(); err != nil {
+		platform.PrintWarning("Failed to clean up state file")
+	}
+
+	platform.PrintSuccess("CodeKiwi stopped gracefully")
 }
 
 // Helper function to check if directory is empty
