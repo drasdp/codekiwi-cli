@@ -19,7 +19,7 @@ Docker 기반의 통합 개발 환경으로, 좌측에는 AI 코드 에디터, �
 ### 설치 (한 번만)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/codekiwi-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main/cli/scripts/install.sh | bash
 ```
 
 ### 사용
@@ -41,32 +41,32 @@ codekiwi
 ### 기본 사용
 
 ```bash
-# 현재 디렉토리로 시작 (opencode 스타일)
+# 현재 디렉토리로 시작 (포그라운드 실행, Ctrl+C로 종료)
 cd ~/my-react-app
 codekiwi
 
 # 특정 디렉토리 지정
 codekiwi ~/my-vue-app
 
-# 중지
-codekiwi stop
+# 다른 터미널에서 강제 종료
+codekiwi kill ~/my-react-app
 
-# 재시작 (마지막 디렉토리로)
-codekiwi restart
-
-# 상태 확인
-codekiwi status
+# 모든 인스턴스 목록 확인
+codekiwi list
 ```
 
 ### 다중 프로젝트 동시 실행
 
 ```bash
-# 여러 프로젝트를 동시에 실행 가능! (자동 포트 할당)
-codekiwi ~/projects/react-app     # 포트 8080, 3000
-codekiwi ~/projects/vue-app       # 포트 8081, 3001
-codekiwi ~/projects/nextjs-app    # 포트 8082, 3002
+# 터미널 1
+cd ~/projects/react-app
+codekiwi                          # 포트 8080, 3000 (포그라운드 실행)
 
-# 모든 인스턴스 확인
+# 터미널 2
+cd ~/projects/vue-app
+codekiwi                          # 포트 8081, 3001 (포그라운드 실행)
+
+# 터미널 3 - 모든 인스턴스 확인
 codekiwi list
 # [인스턴스 #1]
 #   📁 디렉토리: ~/projects/react-app
@@ -78,11 +78,11 @@ codekiwi list
 #   🌐 웹: http://localhost:8081
 #   🔌 개발 서버: http://localhost:3001
 
-# 특정 프로젝트 중지
-codekiwi stop ~/projects/react-app
+# 특정 프로젝트 강제 종료 (다른 터미널에서)
+codekiwi kill ~/projects/react-app
 
-# 모든 프로젝트 중지
-codekiwi stop --all
+# 모든 프로젝트 강제 종료
+codekiwi kill --all
 ```
 
 ### 고급 명령어
@@ -91,11 +91,8 @@ codekiwi stop --all
 # 모든 실행 중인 인스턴스 목록
 codekiwi list
 
-# 특정 디렉토리 상태 확인
-codekiwi status ~/my-project
-
-# 실시간 로그 보기
-codekiwi logs ~/my-project
+# 특정 디렉토리 강제 종료
+codekiwi kill ~/my-project
 
 # 최신 버전으로 업데이트
 codekiwi update
@@ -142,7 +139,7 @@ codekiwi help
 # 1. 프로젝트로 이동
 cd ~/my-awesome-app
 
-# 2. CodeKiwi 시작
+# 2. CodeKiwi 시작 (포그라운드 실행)
 codekiwi
 
 # 3. 브라우저에서 http://localhost:8080 열기
@@ -150,8 +147,7 @@ codekiwi
 # 4. 좌측 터미널에서 코드 편집
 # 5. 우측에서 실시간으로 결과 확인
 
-# 6. 작업 완료 후 중지
-codekiwi stop
+# 6. 작업 완료 후 Ctrl+C로 종료
 ```
 
 ### 여러 프로젝트 작업
@@ -230,28 +226,26 @@ codekiwi list
 ### 완전히 초기화
 
 ```bash
-# 모든 인스턴스 중지
-codekiwi stop --all
+# 모든 인스턴스 강제 종료
+codekiwi kill --all
 
 # Docker 정리
 docker system prune -a
 
 # 제거 및 재설치
 codekiwi uninstall
-curl -fsSL https://raw.githubusercontent.com/your-username/codekiwi-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main/cli/scripts/install.sh | bash
 ```
 
 ## 📚 명령어 레퍼런스
 
 | 명령어 | 설명 |
 |--------|------|
-| `codekiwi` | 현재 디렉토리로 시작 |
-| `codekiwi <path>` | 지정한 디렉토리로 시작 (다중 실행 가능) |
+| `codekiwi` | 현재 디렉토리로 시작 (포그라운드 실행) |
+| `codekiwi <path>` | 지정한 디렉토리로 시작 |
 | `codekiwi list` | 실행 중인 모든 인스턴스 목록 표시 |
-| `codekiwi stop [path]` | 현재 디렉토리 또는 지정한 디렉토리의 인스턴스 중지 |
-| `codekiwi stop --all` | 모든 인스턴스 중지 |
-| `codekiwi status [path]` | 특정 디렉토리의 상태 및 정보 확인 |
-| `codekiwi logs [path]` | 특정 디렉토리의 실시간 로그 출력 |
+| `codekiwi kill [path]` | 지정한 디렉토리의 인스턴스 강제 종료 |
+| `codekiwi kill --all` | 모든 인스턴스 강제 종료 |
 | `codekiwi update` | 최신 버전으로 업데이트 |
 | `codekiwi uninstall` | 완전히 제거 |
 | `codekiwi help` | 도움말 표시 |
