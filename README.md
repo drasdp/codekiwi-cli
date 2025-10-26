@@ -18,11 +18,13 @@ Docker 기반의 통합 개발 환경으로, 좌측에는 AI 코드 에디터, �
 ## ✨ 특징
 
 - 🚀 **원라이너 설치** - 한 줄로 설치 완료
-- 💻 **opencode 스타일** - `cd my-project && codekiwi`로 즉시 실행
+- 💻 **간단한 사용법** - `cd my-project && codekiwi start`로 즉시 실행
 - 🤖 **AI 코드 에디터** - OpenCode AI 통합
 - 👀 **실시간 미리보기** - 코드 변경 즉시 반영
 - 🔢 **다중 인스턴스** - 여러 프로젝트 동시 실행 (자동 포트 할당)
 - 🔄 **스마트 관리** - 프로젝트별 독립적인 컨테이너 및 포트
+- 🎯 **포그라운드 실행** - 실시간 로그, Ctrl+C로 자동 정리 (v0.2.0+)
+- 🏃 **백그라운드 옵션** - `-d` 플래그로 데몬 모드 실행 가능
 - 🌐 **크로스 플랫폼** - macOS, Linux, Windows 지원
 
 ## 🚀 빠른 시작
@@ -56,24 +58,33 @@ curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/cli/script
 # 프로젝트 디렉토리로 이동
 cd ~/my-project
 
-# CodeKiwi 실행
-codekiwi
+# CodeKiwi 실행 (포그라운드 모드 - 기본)
+codekiwi start
 
 # 브라우저가 자동으로 http://localhost:8080 열림
-# Ctrl+C로 종료
+# 로그가 실시간으로 표시됨
+# Ctrl+C로 자동 종료 및 정리
+
+# 백그라운드 모드로 실행 (선택사항)
+codekiwi start -d
+# 또는
+codekiwi start --detached
 ```
 
 #### 실행 과정 상세
 
-`codekiwi` 명령 실행 시:
+`codekiwi start` 명령 실행 시:
 
 1. **설정 로드**: `~/.codekiwi/config.env`에서 설정 값 로드
 2. **포트 할당**: WEB_PORT 8080부터 사용 가능한 포트 자동 찾기
 3. **컨테이너 시작**: Docker Compose로 컨테이너 실행
    - 작업 디렉토리를 `/workspace`로 마운트
    - 환경 변수 전달 (템플릿 설치 여부 등)
-4. **브라우저 열기**: 자동으로 브라우저에서 웹 인터페이스 열기
-5. **로그 스트리밍**: 포그라운드로 실행되며 실시간 로그 출력
+4. **헬스체크 대기**: 서비스가 준비될 때까지 대기 (최대 60초)
+5. **브라우저 열기**: 서비스 준비 완료 후 자동으로 브라우저 열기 (`-n` 플래그로 비활성화 가능)
+6. **실행 모드**:
+   - **포그라운드 (기본)**: 로그 스트리밍, Ctrl+C로 자동 정리
+   - **백그라운드 (`-d`)**: 시작 후 프롬프트 복귀, `codekiwi kill`로 수동 종료
 
 #### 컨테이너 내부 동작
 
@@ -96,35 +107,63 @@ codekiwi
 ### 기본 명령어
 
 ```bash
-# 현재 디렉토리로 시작
-codekiwi
+# 현재 디렉토리로 시작 (포그라운드 모드)
+codekiwi start
+
+# 백그라운드 모드로 시작
+codekiwi start -d
 
 # 특정 디렉토리 지정
-codekiwi ~/my-project
+codekiwi start ~/my-project
+
+# 특정 포트로 시작
+codekiwi start -p 8090
+
+# 브라우저 열지 않고 시작
+codekiwi start -n
 
 # 실행 중인 모든 인스턴스 보기
 codekiwi list
+# 또는 별칭 사용
+codekiwi ls
 
-# 특정 프로젝트 강제 종료
+# 중지된 인스턴스 포함하여 보기
+codekiwi list -a
+
+# 컨테이너 이름만 표시 (quiet 모드)
+codekiwi list -q
+
+# 특정 프로젝트 종료
 codekiwi kill ~/my-project
 
-# 모든 인스턴스 강제 종료
+# 확인 없이 강제 종료
+codekiwi kill -f ~/my-project
+
+# 모든 인스턴스 종료
+codekiwi kill -a
+# 또는
 codekiwi kill --all
 ```
 
 ### 다중 프로젝트 동시 실행
 
 ```bash
-# 터미널 1
+# 백그라운드 모드로 여러 프로젝트 실행
 cd ~/project-a
-codekiwi  # localhost:8080
+codekiwi start -d  # localhost:8080
 
-# 터미널 2
 cd ~/project-b
-codekiwi  # localhost:8081 (자동 할당)
+codekiwi start -d  # localhost:8081 (자동 할당)
 
-# 터미널 3
-codekiwi list  # 모든 실행 중인 인스턴스 확인
+cd ~/project-c
+codekiwi start -d  # localhost:8082 (자동 할당)
+
+# 실행 중인 모든 인스턴스 확인
+codekiwi list
+
+# 포그라운드 모드는 터미널별로 실행
+# 터미널 1: cd ~/project-a && codekiwi start
+# 터미널 2: cd ~/project-b && codekiwi start
 ```
 
 ## 🎨 화면 구성
@@ -256,16 +295,32 @@ curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/cli/script
 
 ## 📚 명령어 레퍼런스
 
-| 명령어 | 설명 |
+### 명령어
+
+| 명령어 | 별칭 | 설명 | 주요 플래그 |
+|--------|------|------|------------|
+| `codekiwi start [path]` | - | CodeKiwi 시작 | `-d` 백그라운드 모드<br>`-n` 브라우저 안 열기<br>`-p` 웹 포트 지정<br>`-t` 템플릿 지정 |
+| `codekiwi list` | `ls` | 실행 중인 인스턴스 목록 | `-a` 모든 인스턴스 표시<br>`-q` 컨테이너 이름만 표시 |
+| `codekiwi kill [path\|container]` | - | 인스턴스 종료 | `-f` 확인 없이 강제<br>`-a` 모든 인스턴스 종료 |
+| `codekiwi update` | - | CLI와 Docker 이미지 업데이트 | `--skip-cli` CLI 업데이트 건너뛰기<br>`--skip-image` 이미지 업데이트 건너뛰기 |
+| `codekiwi uninstall` | - | CodeKiwi 제거 | `-f` 확인 없이 강제<br>`--keep-data` 설정 파일 유지<br>`--keep-images` Docker 이미지 유지 |
+
+### 전역 플래그
+
+| 플래그 | 설명 |
 |--------|------|
-| `codekiwi` | 현재 디렉토리로 시작 |
-| `codekiwi <path>` | 지정한 디렉토리로 시작 |
-| `codekiwi list` | 실행 중인 모든 인스턴스 목록 |
-| `codekiwi kill [path]` | 특정 인스턴스 종료 |
-| `codekiwi kill --all` | 모든 인스턴스 종료 |
-| `codekiwi update` | 최신 버전으로 업데이트 |
-| `codekiwi uninstall` | 완전히 제거 |
-| `codekiwi help` | 도움말 표시 |
+| `--help`, `-h` | 도움말 표시 |
+| `--version`, `-v` | 버전 정보 표시 |
+
+### Start 명령어 상세 플래그
+
+| 플래그 | 단축 | 설명 | 기본값 |
+|--------|------|------|--------|
+| `--detached` | `-d` | 백그라운드 모드로 실행 | false (포그라운드) |
+| `--no-open` | `-n` | 브라우저 자동 열기 비활성화 | false |
+| `--web-port` | `-p` | 웹 인터페이스 포트 지정 | 자동 (8080부터) |
+| `--dev-port` | | 개발 서버 포트 지정 | 자동 (3000부터) |
+| `--template` | `-t` | 프로젝트 템플릿 지정 | 자동 감지 |
 
 ---
 
@@ -277,25 +332,37 @@ CodeKiwi 프로젝트를 개발하고 기여하는 방법입니다.
 
 ```
 codekiwi-web/
-├── cli/                      # CLI 도구
-│   ├── bin/
-│   │   └── codekiwi         # 메인 CLI 스크립트
+├── cli-go/                   # Go 기반 CLI (v0.2.0+)
+│   ├── cmd/codekiwi/
+│   │   └── main.go          # 메인 엔트리포인트
+│   ├── internal/
+│   │   ├── commands/        # CLI 명령어 구현
+│   │   │   ├── start.go     # start 명령
+│   │   │   ├── list.go      # list 명령
+│   │   │   ├── kill.go      # kill 명령
+│   │   │   ├── update.go    # update 명령
+│   │   │   └── uninstall.go # uninstall 명령
+│   │   ├── config/          # 설정 관리
+│   │   ├── docker/          # Docker 작업
+│   │   ├── platform/        # 플랫폼별 기능
+│   │   └── state/           # 인스턴스 상태 관리
+│   ├── go.mod               # Go 모듈 정의
+│   └── go.sum               # 의존성 lock 파일
+├── cli/                      # 레거시 Bash CLI (deprecated)
 │   └── scripts/
 │       └── install.sh       # 설치 스크립트
 ├── runtime/                 # Docker 컨테이너 런타임
 │   ├── Dockerfile          # 런타임 이미지 정의
 │   ├── config/
-│   │   └── nginx.conf      # Nginx 프록시 설정
+│   │   └── nginx.conf      # Nginx 프록시 설정 (health 엔드포인트 포함)
 │   ├── scripts/
 │   │   ├── check_and_setup.sh  # 템플릿 설치 스크립트
 │   │   └── start.sh            # 컨테이너 시작 스크립트
 │   └── web/
 │       └── index.html      # 웹 인터페이스 (iframe 구조)
-├── lib/
-│   └── config-loader.sh    # 설정 로더 헬퍼
 ├── config.env              # 중앙 설정 파일 (SSOT)
-├── docker-compose.yaml     # 프로덕션 Compose 파일
-└── docker-compose.dev.yaml # 개발용 Compose 파일
+├── docker-compose.yaml     # 프로덕션 Compose 파일 (healthcheck 포함)
+└── docker-compose.dev.yaml # 개발용 Compose 파일 (healthcheck 포함)
 ```
 
 ## 🚀 개발 환경 설정
@@ -309,17 +376,36 @@ cd codekiwi-web
 
 ### 2. 개발 모드 실행
 
-개발 모드에서는 로컬에서 Docker 이미지를 빌드하고 실행합니다:
+#### Go CLI 빌드 및 실행
 
 ```bash
-# 프로젝트 루트에서
-./cli/bin/codekiwi ~/test-project
+# Go CLI 빌드
+cd cli-go
+go build -o codekiwi cmd/codekiwi/main.go
+
+# 개발 모드로 실행
+./codekiwi start ~/test-project
 ```
 
-개발 모드 감지:
+#### 개발 모드 감지
+
 - `docker-compose.dev.yaml` 파일이 있으면 개발 모드로 인식
 - 로컬에서 `runtime/Dockerfile`을 빌드
 - Docker Hub 이미지 대신 로컬 빌드 이미지 사용
+
+#### Go CLI 개발 워크플로우
+
+```bash
+# 코드 수정 후
+cd cli-go
+go build -o codekiwi cmd/codekiwi/main.go
+
+# 테스트
+./codekiwi start              # 포그라운드 모드
+./codekiwi start -d           # 백그라운드 모드
+./codekiwi list               # 인스턴스 목록
+./codekiwi kill .             # 현재 프로젝트 종료
+```
 
 ### 3. 설정 관리 (SSOT)
 
@@ -341,8 +427,9 @@ CODEKIWI_WORKSPACE_DIR=/workspace   # 컨테이너 내 작업 디렉토리
 - **내부 전용**: dev server(3000), ttyd(7681) - nginx를 통해서만 접근 가능
 
 설정 로드 방식:
-- **CLI**: `lib/config-loader.sh`를 source하여 Bash 변수로 로드
+- **Go CLI**: `internal/config/config.go`에서 godotenv로 파싱
 - **Runtime**: Docker Compose의 `env_file`로 환경 변수 주입
+- **레거시 Bash CLI**: `lib/config-loader.sh`를 source (deprecated)
 
 ## 📦 빌드 및 배포
 
@@ -382,11 +469,22 @@ git push origin main
 ### CLI 테스트
 
 ```bash
+# Go CLI 빌드
+cd cli-go
+go build -o codekiwi cmd/codekiwi/main.go
+
 # 다양한 시나리오 테스트
-./cli/bin/codekiwi                    # 현재 디렉토리
-./cli/bin/codekiwi ~/test-dir         # 특정 디렉토리
-./cli/bin/codekiwi list               # 목록 확인
-./cli/bin/codekiwi kill ~/test-dir    # 종료
+./codekiwi start                    # 현재 디렉토리 (포그라운드)
+./codekiwi start -d ~/test-dir      # 특정 디렉토리 (백그라운드)
+./codekiwi start -p 9000             # 커스텀 포트
+./codekiwi list                      # 실행 중인 인스턴스
+./codekiwi list -a                   # 모든 인스턴스
+./codekiwi kill ~/test-dir           # 특정 프로젝트 종료
+./codekiwi kill -a                   # 모든 인스턴스 종료
+
+# 도움말
+./codekiwi --help
+./codekiwi start --help
 ```
 
 ## 📄 라이선스
