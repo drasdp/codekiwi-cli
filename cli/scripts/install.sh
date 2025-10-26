@@ -69,36 +69,15 @@ if ! curl -fsSL "$REPO_URL/cli/bin/codekiwi" -o "$INSTALL_DIR/codekiwi"; then
     exit 1
 fi
 
-# Docker 관련 파일 다운로드
-docker_files=(
-    "Dockerfile"
-    "docker-compose.yaml"
-    "scripts/start.sh"
-    "scripts/check_and_setup.sh"
-    "config/nginx.conf"
-    "config/.tmux.conf"
-    "config/.bashrc"
-    "web/index.html"
-)
-
-for file in "${docker_files[@]}"; do
-    # 서브디렉토리 생성
-    file_dir=$(dirname "$file")
-    if [ "$file_dir" != "." ]; then
-        mkdir -p "$INSTALL_DIR/$file_dir"
-    fi
-
-    print_info "다운로드 중: $file"
-    if ! curl -fsSL "$REPO_URL/docker/$file" -o "$INSTALL_DIR/$file"; then
-        print_error "$file 다운로드 실패"
-        exit 1
-    fi
-done
+# docker-compose.yaml 다운로드 (루트에서)
+print_info "다운로드 중: docker-compose.yaml"
+if ! curl -fsSL "$REPO_URL/docker-compose.yaml" -o "$INSTALL_DIR/docker-compose.yaml"; then
+    print_error "docker-compose.yaml 다운로드 실패"
+    exit 1
+fi
 
 # 실행 권한 부여
 chmod +x "$INSTALL_DIR/codekiwi"
-chmod +x "$INSTALL_DIR/scripts/start.sh"
-chmod +x "$INSTALL_DIR/scripts/check_and_setup.sh"
 
 print_success "파일 다운로드 완료"
 
@@ -120,12 +99,11 @@ sudo ln -s "$INSTALL_DIR/codekiwi" "$BIN_DIR/codekiwi"
 
 print_success "글로벌 명령어 설치 완료"
 
-# Docker 이미지 빌드
-print_info "Docker 이미지를 빌드합니다... (1-2분 소요)"
-cd "$INSTALL_DIR"
-docker build -t codekiwi-cli:latest . > /dev/null 2>&1
+# Docker 이미지 pull
+print_info "Docker 이미지를 다운로드합니다..."
+docker pull aardvarkdev1/codekiwi-runtime:latest
 
-print_success "Docker 이미지 빌드 완료"
+print_success "Docker 이미지 다운로드 완료"
 
 echo ""
 echo "======================================"

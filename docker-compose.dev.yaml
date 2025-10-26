@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
-  codekiwi-cli:
-    image: codekiwi-cli:latest
+  codekiwi-runtime:
     build:
-      context: .
+      context: ./runtime
       dockerfile: Dockerfile
-    container_name: ${CONTAINER_NAME:-codekiwi-container}
+    image: codekiwi-runtime:dev
+    container_name: ${CONTAINER_NAME:-codekiwi-runtime}
     ports:
       - "${WEB_PORT:-8080}:80"
       - "${DEV_PORT:-3000}:3000"

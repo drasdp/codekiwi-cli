@@ -1,0 +1,12 @@
+services:
+  codekiwi-runtime:
+    image: aardvarkdev1/codekiwi-runtime:${VERSION:-latest}
+    container_name: ${CONTAINER_NAME:-codekiwi-runtime}
+    ports:
+      - "${WEB_PORT:-8080}:80"
+      - "${DEV_PORT:-3000}:3000"
+    volumes:
+      - ${WORKSPACE_DIR}:/workspace
+    environment:
+      - INSTALL_TEMPLATE=${INSTALL_TEMPLATE:-yes}
+    restart: unless-stopped
