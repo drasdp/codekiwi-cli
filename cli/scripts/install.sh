@@ -66,7 +66,7 @@ mkdir -p "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR/lib"
 
 # GitHub 리포지토리 URL
-REPO_URL="${RAW_CODEKIWI_GITHUB_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
+REPO_URL="${RAW_CODEKIWI_GITHUB_URL:-https://raw.githubusercontent.com/drasdp/codekiwi-cli/main}"
 
 # 필요한 파일 다운로드
 print_info "필요한 파일을 다운로드합니다..."
@@ -125,7 +125,7 @@ print_success "글로벌 명령어 설치 완료"
 
 # Docker 이미지 pull
 print_info "Docker 이미지를 다운로드합니다..."
-IMAGE_NAME="${CODEKIWI_FULL_IMAGE_NAME:-aardvarkdev1/codekiwi-runtime}"
+IMAGE_NAME="${CODEKIWI_FULL_IMAGE_NAME:-drasdp/codekiwi-runtime}"
 IMAGE_TAG="${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}"
 docker pull "$IMAGE_NAME:$IMAGE_TAG"
 
@@ -154,5 +154,5 @@ echo "  codekiwi update      - 업데이트"
 echo "  codekiwi help        - 도움말"
 echo ""
 echo "📚 자세한 정보:"
-echo "  https://github.com/aardvarkdev1/codekiwi-cli"
+echo "  https://github.com/drasdp/codekiwi-cli"
 echo ""

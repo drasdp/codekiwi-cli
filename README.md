@@ -30,7 +30,7 @@ Docker 기반의 통합 개발 환경으로, 좌측에는 AI 코드 에디터, �
 ### 1️⃣ 설치 (한 번만)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main/cli/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/cli/scripts/install.sh | bash
 ```
 
 #### 설치 과정 상세
@@ -48,7 +48,7 @@ curl -fsSL https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main/cli/
        └── config-loader.sh     # 설정 로더 스크립트
    ```
 3. **심볼릭 링크 생성**: `/usr/local/bin/codekiwi` → `~/.codekiwi/codekiwi`
-4. **Docker 이미지 다운로드**: `aardvarkdev1/codekiwi-runtime:latest` 이미지 pull
+4. **Docker 이미지 다운로드**: `drasdp/codekiwi-runtime:latest` 이미지 pull
 
 ### 2️⃣ 사용
 
@@ -251,7 +251,7 @@ codekiwi kill --all
 
 # 제거 및 재설치
 codekiwi uninstall
-curl -fsSL https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main/cli/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/cli/scripts/install.sh | bash
 ```
 
 ## 📚 명령어 레퍼런스
@@ -303,7 +303,7 @@ codekiwi-web/
 ### 1. 저장소 클론
 
 ```bash
-git clone https://github.com/aardvarkdev1/codekiwi-web.git
+git clone https://github.com/drasdp/codekiwi-web.git
 cd codekiwi-web
 ```
 
@@ -357,8 +357,8 @@ docker-compose -f docker-compose.dev.yaml build
 
 1. Docker Hub에 이미지 푸시:
 ```bash
-docker build -t aardvarkdev1/codekiwi-runtime:latest ./runtime
-docker push aardvarkdev1/codekiwi-runtime:latest
+docker build -t drasdp/codekiwi-runtime:latest ./runtime
+docker push drasdp/codekiwi-runtime:latest
 ```
 
 2. GitHub에 코드 푸시:

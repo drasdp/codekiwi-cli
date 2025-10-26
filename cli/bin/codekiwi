@@ -511,7 +511,7 @@ cmd_update() {
     fi
 
     # GitHub에서 최신 파일 다운로드
-    local repo_url="${RAW_CODEKIWI_GITHUB_URL:-https://raw.githubusercontent.com/aardvarkdev1/codekiwi-cli/main}"
+    local repo_url="${RAW_CODEKIWI_GITHUB_URL:-https://raw.githubusercontent.com/drasdp/codekiwi-cli/main}"
 
     print_info "CLI 파일을 업데이트합니다..."
     curl -fsSL "$repo_url/cli/bin/codekiwi" -o "$INSTALL_DIR/codekiwi"
@@ -528,7 +528,7 @@ cmd_update() {
     curl -fsSL "$repo_url/docker-compose.yaml" -o "$INSTALL_DIR/docker-compose.yaml"
 
     print_info "Docker 이미지를 업데이트합니다..."
-    local image_name="${CODEKIWI_FULL_IMAGE_NAME:-aardvarkdev1/codekiwi-runtime}"
+    local image_name="${CODEKIWI_FULL_IMAGE_NAME:-drasdp/codekiwi-runtime}"
     local image_tag="${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}"
     docker pull "$image_name:$image_tag"
 
@@ -601,7 +601,7 @@ CodeKiwi - 웹 기반 개발 환경
   codekiwi kill ~/project-a
 
 자세한 정보:
-  https://github.com/aardvarkdev1/codekiwi-cli
+  https://github.com/drasdp/codekiwi-cli
 
 EOF
 }
