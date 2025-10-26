@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  split-view:
+    build: .
+    container_name: terminal-browser-split
+    ports:
+      - "8080:80"
+    volumes:
+      - ~/CodeKiwi:/workspace
+    restart: unless-stopped

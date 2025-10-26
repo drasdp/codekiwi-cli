@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal & Browser Split View</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; 
+            overflow: hidden; 
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100vw;
+            height: 100vh;
+            gap: 0;
+        }
+        
+        .left-panel {
+            display: grid;
+            grid-template-rows: 2fr 8fr;
+            height: 100vh;
+            gap: 0;
+        }
+        
+        .right-panel {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            height: 100vh;
+            gap: 0;
+        }
+        
+        .project-controls {
+            background: #2c2c2c;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .project-controls h3 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .project-controls button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+            width: 200px;
+        }
+        
+        .project-controls button:hover {
+            background: #005a9e;
+        }
+        
+        .project-controls button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        
+        .project-controls input[type="file"] {
+            display: none;
+        }
+        
+        .selected-folder {
+            color: #4CAF50;
+            font-size: 12px;
+            margin-top: 10px;
+            max-width: 90%;
+            word-break: break-all;
+            text-align: center;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .header {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            background: rgba(33, 150, 243, 0.9);
+            color: white;
+            padding: 5px;
+            text-align: center;
+            font-size: 12px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">Terminal + Browser Split View</div>
+    <div class="container">
+        <div class="left-panel">
+            <div class="project-controls">
+                <h3>프로젝트 관리</h3>
+                <input type="file" id="folderInput" webkitdirectory directory multiple />
+                <button id="loadProjectBtn">프로젝트 불러오기</button>
+                <button id="newProjectBtn" disabled>새 프로젝트</button>
+                <div id="selectedFolder" class="selected-folder"></div>
+            </div>
+            <iframe src="/terminal/" title="OpenCode Terminal"></iframe>
+        </div>
+        <div class="right-panel">
+            <iframe src="https://www.wikipedia.org" 
+                    title="Browser"
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+            <iframe src="/devserver/" title="DevServer Terminal"></iframe>
+        </div>
+    </div>
+    
+    <script>
+        const folderInput = document.getElementById('folderInput');
+        const loadProjectBtn = document.getElementById('loadProjectBtn');
+        const selectedFolder = document.getElementById('selectedFolder');
+        
+        loadProjectBtn.addEventListener('click', () => {
+            folderInput.click();
+        });
+        
+        folderInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                const folderPath = files[0].webkitRelativePath.split('/')[0];
+                selectedFolder.textContent = `선택된 폴더: ${folderPath}`;
+                
+                // 여기서 파일 목록을 서버로 전송하거나 처리할 수 있습니다
+                console.log('선택된 폴더:', folderPath);
+                console.log('파일 개수:', files.length);
+            }
+        });
+    </script>
+</body>
+</html>
