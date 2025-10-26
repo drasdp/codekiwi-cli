@@ -61,7 +61,7 @@ func ComposeUp(projectPath string, containerName string, webPort int, devPort in
 		fmt.Sprintf("DEV_PORT=%d", devPort),
 		fmt.Sprintf("CODEKIWI_WORKSPACE_DIR=/workspace"),
 		fmt.Sprintf("CODEKIWI_INSTALL_DIR_NAME=.codekiwi"),
-		fmt.Sprintf("CODEKIWI_IMAGE_NAME=%s", cfg.GetFullImageName()),
+		fmt.Sprintf("CODEKIWI_IMAGE_NAME=%s", cfg.ImageName),
 		fmt.Sprintf("AUTH_DIR=%s", filepath.Join(cfg.InstallDir, "opencode")),
 	)
 
