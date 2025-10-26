@@ -81,16 +81,14 @@
     </style>
     <script>
         function openWebPage() {
-            // 현재 호스트의 DEV_PORT(3000)로 새 창 열기
-            const devPort = 3000;
-            const url = `${window.location.protocol}//${window.location.hostname}:${devPort}`;
+            // nginx proxy를 통해 접근 (포트 매핑 무관하게 작동)
+            const url = `${window.location.protocol}//${window.location.host}/preview/`;
             window.open(url, '_blank');
         }
 
         function openDashboard() {
-            // 현재 호스트의 DEV_PORT(3000)/codekiwi-dashboard로 새 창 열기
-            const devPort = 3000;
-            const url = `${window.location.protocol}//${window.location.hostname}:${devPort}/codekiwi-dashboard`;
+            // nginx proxy를 통해 접근 (포트 매핑 무관하게 작동)
+            const url = `${window.location.protocol}//${window.location.host}/preview/codekiwi-dashboard`;
             window.open(url, '_blank');
         }
     </script>

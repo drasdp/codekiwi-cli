@@ -146,6 +146,67 @@ codekiwi list  # 모든 실행 중인 인스턴스 확인
 └─────────────────────┴─────────────────────┘
 ```
 
+## 🌐 포트 구조 및 네트워크
+
+CodeKiwi는 **nginx 기반 경로 라우팅**을 통해 단일 포트로 여러 서비스를 제공합니다.
+
+### 포트 매핑 구조
+
+```
+[브라우저] → [호스트 머신] → [Docker 컨테이너 내부]
+
+🌐 WEB_PORT (기본: 8080) - 단일 진입점
+   http://localhost:8080
+   ↓ Docker 포트 매핑 (8080:80)
+   ↓ nginx :80 (컨테이너 내부)
+   ├─ /                        → 웹 UI (index.html)
+   ├─ /terminal/               → ttyd :7681 (웹 터미널)
+   └─ /preview/                → dev server :3000
+      ├─ /preview/             → 웹 애플리케이션 루트
+      └─ /preview/codekiwi-dashboard → 대시보드
+
+🔒 내부 포트 (외부 노출 안 됨)
+   - dev server :3000 (컨테이너 내부)
+   - ttyd :7681 (컨테이너 내부)
+   → 모두 nginx를 통해서만 접근 가능
+```
+
+### 멀티 인스턴스 포트 할당
+
+여러 프로젝트를 동시에 실행할 때, 각 인스턴스는 자동으로 다른 WEB_PORT를 할당받습니다:
+
+```bash
+# 첫 번째 인스턴스
+$ cd ~/project-a && codekiwi
+→ WEB: localhost:8080
+
+# 두 번째 인스턴스
+$ cd ~/project-b && codekiwi
+→ WEB: localhost:8081
+
+# 세 번째 인스턴스
+$ cd ~/project-c && codekiwi
+→ WEB: localhost:8082
+```
+
+각 인스턴스는 **하나의 포트만 사용**하며, 내부 서비스들은 nginx를 통해 경로로 구분됩니다.
+
+### 웹 UI의 버튼 동작
+
+우측 패널의 버튼들은 **현재 접속한 호스트를 기준**으로 새 창을 엽니다:
+
+- **웹페이지 보기**: `현재주소/preview/`
+  - 예: `localhost:8081` 접속 중 → `localhost:8081/preview/` 새 창
+- **대시보드 보기**: `현재주소/preview/codekiwi-dashboard`
+  - 예: `localhost:8081` 접속 중 → `localhost:8081/preview/codekiwi-dashboard` 새 창
+
+### 단일 포트 구조의 장점
+
+- ✅ **단순함**: 포트 하나만 기억하면 됨 (localhost:8080)
+- ✅ **보안**: 최소한의 포트만 노출 (공격 표면 최소화)
+- ✅ **멀티 인스턴스**: 포트 충돌 없이 여러 프로젝트 동시 실행
+- ✅ **일관성**: 모든 서비스가 동일한 경로 패턴 사용
+
 ## ⚙️ 시스템 요구사항
 
 - **Docker** 20.10 이상 및 Docker Compose 2.0 이상

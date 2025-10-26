@@ -7,7 +7,6 @@ services:
     container_name: ${CONTAINER_NAME:-${CODEKIWI_CONTAINER_NAME_PREFIX:-codekiwi-runtime}}
     ports:
       - "${WEB_PORT:-${CODEKIWI_WEB_PORT_DEFAULT:-8080}}:${CODEKIWI_NGINX_PORT:-80}"
-      - "${DEV_PORT:-${CODEKIWI_DEV_PORT_DEFAULT:-3000}}:${CODEKIWI_DEV_PORT_DEFAULT:-3000}"
     volumes:
       - ${WORKSPACE_DIR}:${CODEKIWI_WORKSPACE_DIR:-/workspace}
     environment:
