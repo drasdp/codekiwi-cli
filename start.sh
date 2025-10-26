@@ -8,7 +8,7 @@ echo "Creating tmux session with opencode..."
 tmux new-session -d -s opencode bash -c 'opencode; exec bash'
 
 echo "Creating tmux session for devserver..."
-tmux new-session -d -s devserver bash
+tmux new-session -d -s devserver bash -c 'cd /workspace && npm install && npm run dev; exec bash'
 
 echo "Starting ttyd on port 7681 (opencode)..."
 ttyd -p 7681 -t fontSize=14 -t 'theme={"background":"#1e1e1e"}' tmux attach-session -t opencode &

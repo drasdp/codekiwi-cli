@@ -24,5 +24,6 @@ RUN chmod +x /start.sh
 RUN mkdir -p /workspace
 
 EXPOSE 80
+EXPOSE 3000
 
 CMD ["/start.sh"]
