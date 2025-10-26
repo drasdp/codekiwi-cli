@@ -3,8 +3,10 @@ package commands
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/drasdp/codekiwi-cli/internal/config"
@@ -19,6 +21,7 @@ var (
 	devPort    int
 	noOpen     bool
 	followLogs bool
+	detached   bool
 	template   string
 )
 
@@ -35,7 +38,8 @@ func init() {
 	StartCmd.Flags().IntVarP(&webPort, "web-port", "p", 0, "Web port (default: auto)")
 	StartCmd.Flags().IntVar(&devPort, "dev-port", 0, "Dev server port (default: auto)")
 	StartCmd.Flags().BoolVarP(&noOpen, "no-open", "n", false, "Don't open browser automatically")
-	StartCmd.Flags().BoolVarP(&followLogs, "follow", "f", false, "Follow container logs")
+	StartCmd.Flags().BoolVarP(&followLogs, "follow", "f", false, "Follow container logs (deprecated, use -d for detached mode)")
+	StartCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Run in detached mode (background)")
 	StartCmd.Flags().StringVarP(&template, "template", "t", "", "Project template to use")
 }
 
@@ -191,19 +195,66 @@ func runStart(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Print instructions
-	fmt.Println()
-	fmt.Println("To stop CodeKiwi, run:")
-	fmt.Printf("  codekiwi kill %s\n", projectPath)
-	fmt.Println()
+	// Handle detached vs foreground mode
+	if detached || followLogs {
+		// Detached mode (background)
+		fmt.Println()
+		fmt.Println("To stop CodeKiwi, run:")
+		fmt.Printf("  codekiwi kill %s\n", projectPath)
+		fmt.Println()
 
-	// Follow logs if requested
-	if followLogs {
-		platform.PrintInfo("Following container logs...")
-		return docker.FollowContainerLogs(containerName)
+		// Follow logs if explicitly requested with -f flag
+		if followLogs {
+			platform.PrintInfo("Following container logs...")
+			return docker.FollowContainerLogs(containerName)
+		}
+
+		return nil
 	}
 
-	return nil
+	// Foreground mode (default) - setup signal handler
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	// os.Interrupt handles Ctrl+C on all platforms (Unix: SIGINT, Windows: CTRL_C_EVENT)
+
+	// Cleanup function
+	cleanup := func() {
+		platform.PrintWarning("\nReceived interrupt signal, stopping CodeKiwi...")
+
+		// Try to stop using docker-compose
+		if err := docker.ComposeDown(containerName, projectPath); err != nil {
+			// Fallback to direct docker commands if compose fails
+			platform.PrintWarning("Trying alternative stop method...")
+			if stopErr := docker.StopContainer(containerName); stopErr != nil {
+				platform.PrintError(fmt.Sprintf("Failed to stop container: %v", stopErr))
+			}
+			if rmErr := docker.RemoveContainer(containerName); rmErr != nil {
+				platform.PrintWarning("Failed to remove container")
+			}
+		}
+
+		// Delete state file
+		if err := instance.Delete(); err != nil {
+			platform.PrintWarning("Failed to clean up state file")
+		}
+
+		platform.PrintSuccess("CodeKiwi stopped gracefully")
+	}
+
+	// Handle signal in goroutine
+	go func() {
+		<-sigChan
+		cleanup()
+		os.Exit(0)
+	}()
+
+	// Print instructions for foreground mode
+	fmt.Println()
+	platform.PrintInfo("Following container logs (press Ctrl+C to stop)...")
+	fmt.Println()
+
+	// Stream logs in foreground
+	return docker.FollowContainerLogs(containerName)
 }
 
 // Helper function to check if directory is empty
