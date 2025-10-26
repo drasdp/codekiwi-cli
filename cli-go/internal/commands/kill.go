@@ -124,7 +124,7 @@ func runKill(cmd *cobra.Command, args []string) error {
 	// Stop the container
 	platform.PrintInfo(fmt.Sprintf("Stopping container %s...", instance.ContainerName))
 
-	if err := docker.ComposeDown(instance.ContainerName); err != nil {
+	if err := docker.ComposeDown(instance.ContainerName, instance.ProjectPath); err != nil {
 		// Try direct docker stop if compose fails
 		platform.PrintWarning("Trying alternative stop method...")
 		if err := docker.StopContainer(instance.ContainerName); err != nil {
@@ -190,7 +190,7 @@ func killAllInstances() error {
 	for _, instance := range runningInstances {
 		platform.PrintInfo(fmt.Sprintf("Stopping %s...", instance.ContainerName))
 
-		if err := docker.ComposeDown(instance.ContainerName); err != nil {
+		if err := docker.ComposeDown(instance.ContainerName, instance.ProjectPath); err != nil {
 			// Try direct docker stop if compose fails
 			if err := docker.StopContainer(instance.ContainerName); err != nil {
 				platform.PrintError(fmt.Sprintf("Failed to stop %s: %v", instance.ContainerName, err))

@@ -106,9 +106,16 @@ func ComposeUp(projectPath string, containerName string, webPort int, devPort in
 }
 
 // ComposeDown stops and removes the Docker container
-func ComposeDown(containerName string) error {
+func ComposeDown(containerName string, projectPath string) error {
 	cfg := config.Get()
 	composeCmd := getDockerComposeCommand()
+
+	// Set environment variables
+	env := os.Environ()
+	env = append(env,
+		fmt.Sprintf("WORKSPACE_DIR=%s", projectPath),
+		fmt.Sprintf("CONTAINER_NAME=%s", containerName),
+	)
 
 	// Build command arguments
 	args := []string{}
@@ -123,6 +130,7 @@ func ComposeDown(containerName string) error {
 	)
 
 	cmd := exec.Command(composeCmd, args...)
+	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
