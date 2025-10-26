@@ -389,33 +389,5 @@ git push origin main
 ./cli/bin/codekiwi kill ~/test-dir    # 종료
 ```
 
-## 🤝 기여 방법
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Test thoroughly in development mode
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-### 코드 스타일
-
-- Bash 스크립트: ShellCheck 권장사항 준수
-- Docker: 멀티스테이지 빌드로 이미지 크기 최소화
-- 설정: 모든 하드코딩 값은 `config.env`에 정의
-
 ## 📄 라이선스
-
-MIT License
-
-## 🙏 감사
-
-- [ttyd](https://github.com/tsl0922/ttyd) - Web terminal emulator
-- [OpenCode AI](https://github.com/opencodeiiit/opencode-ai) - AI code editor
-- [tmux](https://github.com/tmux/tmux) - Terminal multiplexer
-- [nginx](https://nginx.org/) - Web server
-
----
-
-**Made with ❤️ for developers**
+- 상업적 사용 시 team@aardvark.co.kr 에 연락 후 협의. For commercial use, please contact team@aardvark.co.kr to discuss terms
