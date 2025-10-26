@@ -329,6 +329,7 @@ cmd_start() {
         WEB_PORT="$web_port" \
         CONTAINER_NAME="$CONTAINER_NAME" \
         INSTALL_TEMPLATE="$install_template" \
+        AUTH_DIR="$INSTALL_DIR/opencode" \
         docker-compose -f "$CODEKIWI_COMPOSE_FILE_DEV" up -d --build
     else
         # 프로덕션 모드: Docker Hub 이미지 사용
@@ -336,6 +337,7 @@ cmd_start() {
         WEB_PORT="$web_port" \
         CONTAINER_NAME="$CONTAINER_NAME" \
         INSTALL_TEMPLATE="$install_template" \
+        AUTH_DIR="$INSTALL_DIR/opencode" \
         docker-compose up -d
     fi
 

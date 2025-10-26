@@ -6,6 +6,7 @@ services:
       - "${WEB_PORT:-${CODEKIWI_WEB_PORT_DEFAULT:-8080}}:${CODEKIWI_NGINX_PORT:-80}"
     volumes:
       - ${WORKSPACE_DIR}:${CODEKIWI_WORKSPACE_DIR:-/workspace}
+      - ${AUTH_DIR:-~/.codekiwi/opencode}:/root/.local/share/opencode
     environment:
       - INSTALL_TEMPLATE=${INSTALL_TEMPLATE:-${CODEKIWI_INSTALL_TEMPLATE_DEFAULT:-yes}}
     restart: ${CODEKIWI_RESTART_POLICY:-unless-stopped}

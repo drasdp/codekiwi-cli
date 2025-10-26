@@ -12,6 +12,15 @@ DEV_PORT="${CODEKIWI_DEV_PORT_DEFAULT:-3000}"
 # 디렉토리 체크 및 템플릿 설정
 /check_and_setup.sh
 
+# OpenCode auth.json 확인 및 설정
+AUTH_DIR="/root/.local/share/opencode"
+if [ -f "$AUTH_DIR/auth.json" ]; then
+    echo "OpenCode auth.json found at $AUTH_DIR/auth.json"
+else
+    echo "Warning: OpenCode auth.json not found at $AUTH_DIR/auth.json"
+    echo "OpenCode may require API key configuration."
+fi
+
 echo "Creating tmux session with opencode..."
 tmux new-session -d -s opencode bash -c "cd \"$WORKSPACE\" && opencode; exec bash"
 
