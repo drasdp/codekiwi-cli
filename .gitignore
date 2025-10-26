@@ -1,0 +1,19 @@
+# 환경 변수 파일 (개인 설정)
+.env
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
