@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Create dist directory
+        run: mkdir -p dist
+
+      - name: Build for Windows
+        run: |
+          cd cli-go
+          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -X main.Version=${{ github.ref_name }} -X main.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o ../dist/codekiwi-windows-amd64.exe ./cmd/codekiwi
+
+      - name: Build for macOS (Intel)
+        run: |
+          cd cli-go
+          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.Version=${{ github.ref_name }} -X main.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o ../dist/codekiwi-darwin-amd64 ./cmd/codekiwi
+
+      - name: Build for macOS (Apple Silicon)
+        run: |
+          cd cli-go
+          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.Version=${{ github.ref_name }} -X main.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o ../dist/codekiwi-darwin-arm64 ./cmd/codekiwi
+
+      - name: Build for Linux
+        run: |
+          cd cli-go
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.Version=${{ github.ref_name }} -X main.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o ../dist/codekiwi-linux-amd64 ./cmd/codekiwi
+
+      - name: Create checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/codekiwi-windows-amd64.exe
+            dist/codekiwi-darwin-amd64
+            dist/codekiwi-darwin-arm64
+            dist/codekiwi-linux-amd64
+            dist/checksums.txt
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
