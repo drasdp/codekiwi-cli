@@ -13,7 +13,7 @@ DEV_PORT="${CODEKIWI_DEV_PORT_DEFAULT:-3000}"
 /check_and_setup.sh
 
 echo "Creating tmux session with opencode..."
-tmux new-session -d -s opencode bash -c 'opencode; exec bash'
+tmux new-session -d -s opencode bash -c "cd \"$WORKSPACE\" && opencode; exec bash"
 
 echo "Starting devserver in background..."
 cd "$WORKSPACE" && npm install && npm run dev &
