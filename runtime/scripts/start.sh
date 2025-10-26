@@ -18,6 +18,16 @@ tmux new-session -d -s opencode bash -c "cd \"$WORKSPACE\" && opencode; exec bas
 echo "Starting devserver in background..."
 cd "$WORKSPACE" && npm install && npm run dev &
 
+echo "Waiting for dev server to start..."
+for i in {1..30}; do
+    if curl -s http://localhost:$DEV_PORT > /dev/null 2>&1; then
+        echo "Dev server is ready!"
+        break
+    fi
+    echo "Waiting for dev server... ($i/30)"
+    sleep 1
+done
+
 echo "Starting ttyd on port $TTYD_PORT (opencode)..."
 ttyd -p "$TTYD_PORT" -t fontSize=14 -t 'theme={"background":"#1e1e1e"}' tmux attach-session -t opencode &
 
