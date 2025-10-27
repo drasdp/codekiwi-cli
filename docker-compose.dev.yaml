@@ -1,16 +1,39 @@
+# ============================================
+# Docker Compose for Development Environment
+# ============================================
+#
+# This file is used when developing CodeKiwi itself.
+# It builds the runtime image locally instead of pulling from Docker Hub.
+#
+# Usage:
+#   make dev-start     # Build and start development environment
+#   make dev-logs      # View logs
+#   make dev-stop      # Stop development environment
+#   make dev-restart   # Rebuild and restart
+#
+# The CLI automatically detects this file and enters development mode.
+# ============================================
+
 services:
   codekiwi-runtime:
+    # Build from local Dockerfile instead of pulling from registry
     build:
       context: ./runtime
       dockerfile: Dockerfile
+    # Tag with 'dev' to distinguish from production images
     image: ${CODEKIWI_IMAGE_REGISTRY:-drasdp}/${CODEKIWI_IMAGE_NAME:-codekiwi-runtime}:${CODEKIWI_IMAGE_TAG_DEV:-dev}
     container_name: ${CONTAINER_NAME:-${CODEKIWI_CONTAINER_NAME_PREFIX:-codekiwi-runtime}}
     ports:
+      # Web interface port (exposed to host)
       - "${WEB_PORT:-${CODEKIWI_WEB_PORT_DEFAULT:-8080}}:${CODEKIWI_NGINX_PORT:-80}"
+      # Dev server port (for direct access during development)
       - "${DEV_PORT:-${CODEKIWI_DEV_PORT_DEFAULT:-3000}}:${CODEKIWI_DEV_PORT_DEFAULT:-3000}"
     volumes:
+      # Mount workspace directory
       - ${WORKSPACE_DIR}:${CODEKIWI_WORKSPACE_DIR:-/workspace}
+      # Mount auth directory for API keys
       - ${AUTH_DIR:-~/.codekiwi/opencode}:/root/.local/share/opencode
+      # Use named volume for node_modules to avoid host/container conflicts
       - node_modules:/workspace/node_modules
     environment:
       - INSTALL_TEMPLATE=${INSTALL_TEMPLATE:-${CODEKIWI_INSTALL_TEMPLATE_DEFAULT:-yes}}
