@@ -21,9 +21,6 @@ else
     echo "OpenCode may require API key configuration."
 fi
 
-echo "Creating tmux session with opencode..."
-tmux new-session -d -s opencode bash -c "cd \"$WORKSPACE\" && opencode; exec bash"
-
 echo "Checking for package.json..."
 if [ -f "$WORKSPACE/package.json" ]; then
     echo "package.json found, starting dev server..."
@@ -44,6 +41,8 @@ if [ -f "$WORKSPACE/package.json" ]; then
     else
         echo "Dependencies already installed, skipping..."
     fi
+
+    echo "✅ npm install completed successfully"
 
     echo "Starting devserver in background..."
     npm run dev &
@@ -71,6 +70,9 @@ else
     # Create ready flag anyway for health check
     touch /tmp/services_ready
 fi
+
+echo "Creating tmux session with opencode..."
+tmux new-session -d -s opencode bash -c "cd \"$WORKSPACE\" && opencode; exec bash"
 
 echo "Starting ttyd on port $TTYD_PORT (opencode)..."
 ttyd -p "$TTYD_PORT" -t fontSize=14 -t 'theme={"background":"#1e1e1e"}' tmux attach-session -t opencode &
