@@ -528,7 +528,7 @@ cmd_update() {
     curl -fsSL "$repo_url/docker-compose.yaml" -o "$INSTALL_DIR/docker-compose.yaml"
 
     print_info "Docker 이미지를 업데이트합니다..."
-    local image_name="${CODEKIWI_FULL_IMAGE_NAME:-drasdp/codekiwi-runtime}"
+    local image_name="${CODEKIWI_FULL_IMAGE_NAME:-devaardvark/codekiwi-runtime}"
     local image_tag="${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}"
     docker pull "$image_name:$image_tag"
 

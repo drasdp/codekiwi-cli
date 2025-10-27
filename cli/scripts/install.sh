@@ -125,7 +125,7 @@ print_success "글로벌 명령어 설치 완료"
 
 # Docker 이미지 pull
 print_info "Docker 이미지를 다운로드합니다..."
-IMAGE_NAME="${CODEKIWI_FULL_IMAGE_NAME:-drasdp/codekiwi-runtime}"
+IMAGE_NAME="${CODEKIWI_FULL_IMAGE_NAME:-devaardvark/codekiwi-runtime}"
 IMAGE_TAG="${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}"
 docker pull "$IMAGE_NAME:$IMAGE_TAG"
 

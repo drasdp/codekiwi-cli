@@ -460,8 +460,8 @@ docker-compose -f docker-compose.dev.yaml build
 
 1. Docker Hub에 이미지 푸시:
 ```bash
-docker build -t drasdp/codekiwi-runtime:latest ./runtime
-docker push drasdp/codekiwi-runtime:latest
+docker build -t devaardvark/codekiwi-runtime:latest ./runtime
+docker push devaardvark/codekiwi-runtime:latest
 ```
 
 2. GitHub에 코드 푸시:
