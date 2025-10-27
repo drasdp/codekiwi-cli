@@ -10,11 +10,6 @@ WORKSPACE="${CODEKIWI_WORKSPACE_DIR:-/workspace}"
 # 템플릿 저장소 URL (public repo)
 TEMPLATE_REPO="${CODEKIWI_TEMPLATE_GITHUB_URL:-https://github.com/aardvark-team-dev/codekiwi-template.git}"
 
-# 디렉토리가 비어있는지 확인
-is_empty_dir() {
-    [ -z "$(ls -A "$WORKSPACE" 2>/dev/null)" ]
-}
-
 # 템플릿 설치 함수
 install_template() {
     echo "템플릿을 설치합니다..."
@@ -72,43 +67,31 @@ install_template() {
     fi
 }
 
-# 메인 로직
-if is_empty_dir; then
+# 메인 로직 - SSOT: CLI의 판단(INSTALL_TEMPLATE)만 신뢰
+if [ "$INSTALL_TEMPLATE" = "yes" ] || [ "$INSTALL_TEMPLATE" = "y" ]; then
     echo "======================================"
     echo "  CodeKiwi 초기 설정"
     echo "======================================"
     echo ""
-    echo "📁 폴더가 비어있습니다."
+    echo "📁 템플릿을 설치합니다..."
+    echo "템플릿에는 기본 개발 환경 설정과 예제 파일이 포함되어 있습니다."
     echo ""
 
-    # 환경 변수로 템플릿 설치 여부 확인 (기본값: yes)
-    INSTALL_TEMPLATE="${INSTALL_TEMPLATE:-${CODEKIWI_INSTALL_TEMPLATE_DEFAULT:-yes}}"
-
-    if [ "$INSTALL_TEMPLATE" = "yes" ] || [ "$INSTALL_TEMPLATE" = "y" ]; then
-        echo "CodeKiwi 템플릿을 설치합니다..."
-        echo "템플릿에는 기본 개발 환경 설정과 예제 파일이 포함되어 있습니다."
+    if install_template; then
         echo ""
-
-        if install_template; then
-            echo ""
-            echo "✅ 템플릿 설치 완료!"
-        else
-            echo ""
-            echo "❌ 템플릿 설치에 실패했습니다."
-            echo "컨테이너를 종료합니다."
-            echo ""
-            echo "======================================"
-            echo ""
-            exit 1
-        fi
+        echo "✅ 템플릿 설치 완료!"
+        echo ""
+        echo "======================================"
+        echo ""
     else
-        echo "템플릿 설치를 건너뜁니다."
-        echo "빈 디렉토리로 계속 진행합니다."
+        echo ""
+        echo "❌ 템플릿 설치에 실패했습니다."
+        echo "컨테이너를 종료합니다."
+        echo ""
+        echo "======================================"
+        echo ""
+        exit 1
     fi
-
-    echo ""
-    echo "======================================"
-    echo ""
 else
-    echo "✅ 작업 디렉토리에 파일이 존재합니다. 계속 진행합니다."
+    echo "✅ 기존 프로젝트를 사용합니다."
 fi
