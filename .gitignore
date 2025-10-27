@@ -1,6 +1,10 @@
 # 환경 변수 파일 (개인 설정)
 .env
 
+# 개발 환경
+cli-go/codekiwi
+cli-go/codekiwi.exe
+
 # Docker
 .dockerignore
 

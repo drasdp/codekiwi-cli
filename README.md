@@ -342,167 +342,171 @@ curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/cli/script
 
 # 👩‍💻 개발자 가이드
 
-CodeKiwi 프로젝트를 개발하고 기여하는 방법입니다.
+CodeKiwi 프로젝트 자체를 개발하고 기여하는 방법입니다.
+
+**중요**: 이 가이드는 CodeKiwi를 **사용**하는 것이 아니라, CodeKiwi 프로젝트 자체를 **개발**하는 방법을 설명합니다.
+
+---
 
 ## 🏗️ 프로젝트 구조
 
 ```
 codekiwi-cli/
-├── cli-go/                   # Go 기반 CLI (v0.2.0+)
-│   ├── cmd/codekiwi/
-│   │   └── main.go          # 메인 엔트리포인트
-│   ├── internal/
-│   │   ├── commands/        # CLI 명령어 구현
-│   │   │   ├── start.go     # start 명령
-│   │   │   ├── list.go      # list 명령
-│   │   │   ├── kill.go      # kill 명령
-│   │   │   ├── update.go    # update 명령
-│   │   │   └── uninstall.go # uninstall 명령
-│   │   ├── config/          # 설정 관리
-│   │   ├── docker/          # Docker 작업
-│   │   ├── platform/        # 플랫폼별 기능
-│   │   └── state/           # 인스턴스 상태 관리
-│   ├── go.mod               # Go 모듈 정의
-│   └── go.sum               # 의존성 lock 파일
-├── cli/                      # 레거시 Bash CLI (deprecated)
-│   └── scripts/
-│       └── install.sh       # 설치 스크립트
-├── runtime/                 # Docker 컨테이너 런타임
-│   ├── Dockerfile          # 런타임 이미지 정의
-│   ├── config/
-│   │   └── nginx.conf      # Nginx 프록시 설정 (health 엔드포인트 포함)
-│   ├── scripts/
-│   │   ├── check_and_setup.sh  # 템플릿 설치 스크립트
-│   │   └── start.sh            # 컨테이너 시작 스크립트
-│   └── web/
-│       └── index.html      # 웹 인터페이스 (iframe 구조)
-├── config.env              # 중앙 설정 파일 (SSOT)
-├── docker-compose.yaml     # 프로덕션 Compose 파일 (healthcheck 포함)
-└── docker-compose.dev.yaml # 개발용 Compose 파일 (healthcheck 포함)
+├── cli-go/              # Go 기반 CLI (실제 개발 중)
+│   ├── cmd/codekiwi/    # CLI 엔트리포인트
+│   └── internal/        # CLI 구현 (commands, docker, config 등)
+│
+├── runtime/             # Docker 런타임 이미지 (중요!)
+│   ├── Dockerfile       # 런타임 이미지 정의
+│   ├── config/          # nginx.conf 등
+│   ├── scripts/         # start.sh, check_and_setup.sh
+│   └── web/             # index.html
+│
+├── config.env           # 중앙 설정 파일 (SSOT)
+├── docker-compose.yaml  # 프로덕션용
+├── docker-compose.dev.yaml  # 개발용 (로컬 빌드)
+└── Makefile             # 개발 명령어
 ```
 
-## 🚀 개발 환경 설정
+**핵심 구성 요소:**
+- **cli-go/** - Go CLI 프로그램 (`codekiwi` 명령어)
+- **runtime/** - Docker 이미지 (OpenCode AI, nginx, ttyd 포함)
+- **config.env** - 모든 설정의 단일 소스
 
-### 1. 저장소 클론
+---
+
+## 🚀 빠른 시작
+
+### 1. 사전 요구사항
+- Go 1.20+
+- Docker 20.10+
+- Make
+
+### 2. 개발 환경 설정
 
 ```bash
+# 저장소 클론
 git clone https://github.com/drasdp/codekiwi-cli.git
 cd codekiwi-cli
-```
-
-### 2. 개발 모드 실행
-
-#### Go CLI 빌드 및 실행
-
-```bash
-# Go CLI 빌드
-cd cli-go
-go build -o codekiwi cmd/codekiwi/main.go
-
-# 개발 모드로 실행
-./codekiwi start ~/test-project
-```
-
-#### 개발 모드 감지
-
-- `docker-compose.dev.yaml` 파일이 있으면 개발 모드로 인식
-- 로컬에서 `runtime/Dockerfile`을 빌드
-- Docker Hub 이미지 대신 로컬 빌드 이미지 사용
-
-#### Go CLI 개발 워크플로우
-
-```bash
-# 코드 수정 후
-cd cli-go
-go build -o codekiwi cmd/codekiwi/main.go
-
-# 테스트
-./codekiwi start              # 포그라운드 모드
-./codekiwi start -d           # 백그라운드 모드
-./codekiwi list               # 인스턴스 목록
-./codekiwi kill .             # 현재 프로젝트 종료
-```
-
-### 3. 설정 관리 (SSOT)
-
-모든 설정은 `config.env`에서 중앙 관리됩니다:
-
-```bash
-# 포트 설정
-CODEKIWI_WEB_PORT_DEFAULT=8080      # 웹 인터페이스 포트 (호스트에 노출)
-CODEKIWI_DEV_PORT_DEFAULT=3000      # 개발 서버 내부 포트 (컨테이너 내부 전용, 호스트에 노출 안 됨)
-CODEKIWI_TTYD_PORT=7681             # 웹 터미널 내부 포트 (컨테이너 내부 전용, 호스트에 노출 안 됨)
-CODEKIWI_NGINX_PORT=80              # Nginx 내부 포트 (컨테이너 내부 전용)
-
-# 경로 설정
-CODEKIWI_WORKSPACE_DIR=/workspace   # 컨테이너 내 작업 디렉토리
-```
-
-**포트 노출 정책:**
-- **호스트에 노출**: `WEB_PORT` (8080) 하나만
-- **내부 전용**: dev server(3000), ttyd(7681) - nginx를 통해서만 접근 가능
-
-설정 로드 방식:
-- **Go CLI**: `internal/config/config.go`에서 godotenv로 파싱
-- **Runtime**: Docker Compose의 `env_file`로 환경 변수 주입
-- **레거시 Bash CLI**: `lib/config-loader.sh`를 source (deprecated)
-
-## 📦 빌드 및 배포
-
-### 로컬 이미지 빌드
-
-```bash
-# 개발용 이미지 빌드
-docker-compose -f docker-compose.dev.yaml build
-```
-
-### 프로덕션 배포
-
-1. Docker Hub에 이미지 푸시:
-```bash
-docker buildx build --platform linux/amd64,linux/arm64 -t drasdp/codekiwi-runtime:latest --push ./runtime
-
-docker push drasdp/codekiwi-runtime:latest
-```
-
-2. GitHub에 코드 푸시:
-```bash
-git add .
-git commit -m "Update version"
-git push origin main
-```
-
-사용자는 `codekiwi update` 명령으로 최신 버전을 받을 수 있습니다.
-
-## 🧪 테스트
-
-### 설치 테스트
-
-```bash
-# 로컬 install.sh 테스트
-./cli/scripts/install.sh
-```
-
-### CLI 테스트
-
-```bash
-# Go CLI 빌드
-cd cli-go
-go build -o codekiwi cmd/codekiwi/main.go
-
-# 다양한 시나리오 테스트
-./codekiwi start                    # 현재 디렉토리 (포그라운드)
-./codekiwi start -d ~/test-dir      # 특정 디렉토리 (백그라운드)
-./codekiwi start -p 9000             # 커스텀 포트
-./codekiwi list                      # 실행 중인 인스턴스
-./codekiwi list -a                   # 모든 인스턴스
-./codekiwi kill ~/test-dir           # 특정 프로젝트 종료
-./codekiwi kill -a                   # 모든 인스턴스 종료
 
 # 도움말
-./codekiwi --help
-./codekiwi start --help
+make help
 ```
+
+### 3. 개발 워크플로우
+
+```bash
+# 1. 빌드
+make build dev-cli       # CLI 바이너리 빌드
+make build dev-runtime   # Runtime 이미지 빌드 (dev 태그)
+make build dev           # 둘 다 빌드
+
+# 2. 개발 모드로 실행 (프로덕션의 'codekiwi'와 동일)
+make dev start [path]    # CodeKiwi 시작
+make dev list            # 인스턴스 목록
+make dev kill [path]     # 인스턴스 종료
+
+# 3. 정리
+make clean               # 빌드 산출물 제거
+```
+
+---
+
+## 🔧 상세 가이드
+
+### CLI 개발
+
+```bash
+# 1. 코드 수정
+vim cli-go/internal/commands/start.go
+
+# 2. 빌드
+make build dev-cli
+
+# 3. 테스트
+make dev start ~/my-test-project
+
+# 4. 또는 직접 실행
+cd cli-go
+./codekiwi start ~/my-test-project
+```
+
+### Runtime 개발
+
+```bash
+# 1. Dockerfile 수정
+vim runtime/Dockerfile
+vim runtime/scripts/start.sh
+
+# 2. 빌드
+make build dev-runtime
+
+# 3. 테스트
+make dev start ~/my-test-project
+```
+
+### 개발 모드 자동 감지
+
+CLI는 `docker-compose.dev.yaml` 파일이 있으면 자동으로 개발 모드로 전환:
+- **개발 모드**: 로컬에서 `runtime/Dockerfile` 빌드 → `drasdp/codekiwi-runtime:dev`
+- **프로덕션 모드**: Docker Hub에서 이미지 pull → `drasdp/codekiwi-runtime:latest`
+
+---
+
+## 📦 프로덕션 배포
+
+### Runtime 이미지 푸시
+
+```bash
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t drasdp/codekiwi-runtime:latest \
+  --push ./runtime
+```
+
+### CLI 바이너리 빌드
+
+```bash
+cd cli-go
+GOOS=linux GOARCH=amd64 go build -o codekiwi-linux-amd64 cmd/codekiwi/main.go
+GOOS=darwin GOARCH=amd64 go build -o codekiwi-darwin-amd64 cmd/codekiwi/main.go
+GOOS=darwin GOARCH=arm64 go build -o codekiwi-darwin-arm64 cmd/codekiwi/main.go
+GOOS=windows GOARCH=amd64 go build -o codekiwi-windows-amd64.exe cmd/codekiwi/main.go
+```
+
+---
+
+## 🛠️ 트러블슈팅
+
+### CLI 바이너리 없음
+```bash
+make build dev-cli
+```
+
+### Runtime 이미지 없음
+```bash
+make build dev-runtime
+```
+
+### 포트 충돌
+```bash
+# 사용 중인 포트 확인
+lsof -i :8080
+make dev kill [path]
+```
+
+---
+
+## 💡 핵심 개념
+
+### `make dev` vs `codekiwi`
+
+| 환경 | 명령어 | CLI | Runtime 이미지 |
+|------|--------|-----|---------------|
+| **개발** | `make dev start` | `cli-go/codekiwi` (로컬 빌드) | `drasdp/codekiwi-runtime:dev` (로컬 빌드) |
+| **프로덕션** | `codekiwi start` | `/usr/local/bin/codekiwi` (설치됨) | `drasdp/codekiwi-runtime:latest` (Docker Hub) |
+
+`make dev`는 개발 중인 CLI와 이미지를 사용하는 wrapper입니다.
 
 ## 📄 라이선스
 - 상업적 사용 시 team@aardvark.co.kr 에 연락 후 협의. For commercial use, please contact team@aardvark.co.kr to discuss terms
