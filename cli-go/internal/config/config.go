@@ -92,7 +92,7 @@ func Load() (*Config, error) {
 	cfg.NginxPort = getEnvInt("CODEKIWI_NGINX_PORT", 80)
 
 	cfg.ContainerPrefix = getEnvString("CODEKIWI_CONTAINER_NAME_PREFIX", "codekiwi-runtime")
-	cfg.ImageRegistry = getEnvString("CODEKIWI_IMAGE_REGISTRY", "drasdp")
+	cfg.ImageRegistry = getEnvString("CODEKIWI_IMAGE_REGISTRY", "devaardvark")
 	cfg.ImageName = getEnvString("CODEKIWI_IMAGE_NAME", "codekiwi-runtime")
 	cfg.ImageTag = getEnvString("CODEKIWI_IMAGE_TAG_DEFAULT", "latest")
 

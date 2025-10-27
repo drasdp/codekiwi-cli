@@ -1,6 +1,6 @@
 services:
   codekiwi-runtime:
-    image: ${CODEKIWI_IMAGE_REGISTRY:-drasdp}/${CODEKIWI_IMAGE_NAME:-codekiwi-runtime}:${VERSION:-${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}}
+    image: ${CODEKIWI_IMAGE_REGISTRY:-devaardvark}/${CODEKIWI_IMAGE_NAME:-codekiwi-runtime}:${VERSION:-${CODEKIWI_IMAGE_TAG_DEFAULT:-latest}}
     container_name: ${CONTAINER_NAME:-${CODEKIWI_CONTAINER_NAME_PREFIX:-codekiwi-runtime}}
     ports:
       - "${WEB_PORT:-${CODEKIWI_WEB_PORT_DEFAULT:-8080}}:${CODEKIWI_NGINX_PORT:-80}"
