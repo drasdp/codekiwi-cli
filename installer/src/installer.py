@@ -16,6 +16,124 @@ import json
 import shutil
 import threading
 import time
+import ctypes
+
+
+def get_clean_env():
+    """
+    Get a clean environment for subprocess calls in PyInstaller context.
+    This fixes the issue where subprocess can't find system executables like curl.
+    """
+    env = dict(os.environ)
+
+    # If running as PyInstaller bundle
+    if getattr(sys, 'frozen', False):
+        # Remove _MEIPASS paths from PATH to avoid DLL conflicts
+        meipass = getattr(sys, '_MEIPASS', None)
+        if meipass and 'PATH' in env:
+            paths = env['PATH'].split(os.pathsep)
+            # Filter out PyInstaller temporary paths
+            paths = [p for p in paths if not p.startswith(meipass)]
+            env['PATH'] = os.pathsep.join(paths)
+
+        # On Windows, reset DLL directory to allow system programs to find their DLLs
+        if sys.platform == 'win32':
+            try:
+                # Reset DLL search path to default
+                ctypes.windll.kernel32.SetDllDirectoryW(None)
+            except Exception:
+                pass  # Ignore if this fails
+
+    return env
+
+
+def get_subprocess_kwargs():
+    """
+    Get proper subprocess kwargs for PyInstaller GUI mode.
+    Fixes handle errors in console=False mode.
+    """
+    kwargs = {
+        'stdin': subprocess.PIPE,    # Required to prevent handle errors
+        'stdout': subprocess.PIPE,   # Required to capture output
+        'stderr': subprocess.PIPE,   # Required to capture errors
+    }
+
+    # On Windows, hide console window for subprocess
+    if sys.platform == 'win32':
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        si.wShowWindow = subprocess.SW_HIDE  # Hide window
+        kwargs['startupinfo'] = si
+
+    # Use clean environment
+    kwargs['env'] = get_clean_env()
+
+    return kwargs
+
+
+def find_curl_path():
+    """Find the absolute path to curl executable."""
+    if sys.platform == 'win32':
+        # Try common Windows locations for curl.exe
+        possible_paths = [
+            r'C:\Windows\System32\curl.exe',
+            r'C:\Windows\SysWOW64\curl.exe',
+            os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'System32', 'curl.exe'),
+        ]
+
+        # Check each path
+        for path in possible_paths:
+            if os.path.exists(path) and os.path.isfile(path):
+                return path
+
+        # Try to find curl using where.exe
+        try:
+            kwargs = get_subprocess_kwargs()
+            result = subprocess.run(['where.exe', 'curl'],
+                                  timeout=5,
+                                  **kwargs)
+            if result.returncode == 0:
+                output = result.stdout.decode('utf-8', errors='ignore').strip()
+                paths = output.split('\n')
+                for path in paths:
+                    path = path.strip()
+                    if path and os.path.exists(path):
+                        return path
+        except Exception:
+            pass
+
+        # Last resort: try just 'curl' and let Windows search PATH
+        return 'curl'
+
+    else:
+        # Unix-like systems (Linux, macOS)
+        # Try which command first
+        try:
+            kwargs = get_subprocess_kwargs()
+            result = subprocess.run(['which', 'curl'],
+                                  timeout=5,
+                                  **kwargs)
+            if result.returncode == 0:
+                path = result.stdout.decode('utf-8', errors='ignore').strip()
+                if path and os.path.exists(path):
+                    return path
+        except Exception:
+            pass
+
+        # Common Unix locations
+        possible_paths = [
+            '/usr/bin/curl',
+            '/usr/local/bin/curl',
+            '/opt/homebrew/bin/curl',  # macOS with Homebrew on Apple Silicon
+            '/opt/local/bin/curl',     # macOS with MacPorts
+        ]
+
+        for path in possible_paths:
+            if os.path.exists(path) and os.path.isfile(path):
+                return path
+
+        # Default to 'curl' and let the system find it
+        return 'curl'
 
 
 class CodeKiwiInstaller:
@@ -251,13 +369,15 @@ Click 'Next' to begin the installation process.""".format(
         """Thread function to check Docker"""
         results = []
         all_passed = True
+        kwargs = get_subprocess_kwargs()
 
         # Check 1: Docker command exists
         try:
             result = subprocess.run(["docker", "--version"],
-                                  capture_output=True, text=True, timeout=5)
+                                  timeout=5,
+                                  **kwargs)
             if result.returncode == 0:
-                version = result.stdout.strip()
+                version = result.stdout.decode('utf-8', errors='ignore').strip()
                 results.append(f"✓ Docker installed: {version}")
             else:
                 results.append("✗ Docker command not found")
@@ -269,11 +389,16 @@ Click 'Next' to begin the installation process.""".format(
         # Check 2: Docker daemon running
         try:
             result = subprocess.run(["docker", "info"],
-                                  capture_output=True, text=True, timeout=10)
+                                  timeout=10,
+                                  **kwargs)
             if result.returncode == 0:
                 results.append("✓ Docker daemon is running")
             else:
-                results.append("✗ Docker daemon is not running\n  Please start Docker Desktop")
+                error_msg = result.stderr.decode('utf-8', errors='ignore').strip()
+                if 'permission denied' in error_msg.lower():
+                    results.append("✗ Docker daemon requires permissions\n  Add user to docker group or run with sudo")
+                else:
+                    results.append("✗ Docker daemon is not running\n  Please start Docker Desktop")
                 all_passed = False
         except (subprocess.TimeoutExpired, FileNotFoundError) as e:
             results.append(f"✗ Docker daemon is not running: {str(e)}")
@@ -284,9 +409,10 @@ Click 'Next' to begin the installation process.""".format(
         try:
             # Try docker compose (v2)
             result = subprocess.run(["docker", "compose", "version"],
-                                  capture_output=True, text=True, timeout=5)
+                                  timeout=5,
+                                  **kwargs)
             if result.returncode == 0:
-                version = result.stdout.strip()
+                version = result.stdout.decode('utf-8', errors='ignore').strip()
                 results.append(f"✓ Docker Compose installed: {version}")
                 compose_found = True
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -296,9 +422,10 @@ Click 'Next' to begin the installation process.""".format(
             try:
                 # Try docker-compose (v1)
                 result = subprocess.run(["docker-compose", "--version"],
-                                      capture_output=True, text=True, timeout=5)
+                                      timeout=5,
+                                      **kwargs)
                 if result.returncode == 0:
-                    version = result.stdout.strip()
+                    version = result.stdout.decode('utf-8', errors='ignore').strip()
                     results.append(f"✓ Docker Compose installed: {version}")
                     compose_found = True
             except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -359,6 +486,10 @@ Click 'Next' to begin the installation process.""".format(
                                           wraplength=600)
         self.curl_status_label.pack(pady=10)
 
+        # Button frame for install/recheck
+        self.curl_button_frame = ttk.Frame(self.curl_result_frame)
+        self.curl_button_frame.pack(pady=10)
+
         # Auto-check curl
         self.root.after(100, self.check_curl)
 
@@ -367,21 +498,66 @@ Click 'Next' to begin the installation process.""".format(
 
     def check_curl(self):
         """Check if curl is installed"""
+        # Clear previous buttons
+        for widget in self.curl_button_frame.winfo_children():
+            widget.destroy()
+
+        # Find curl path
+        curl_path = find_curl_path()
+        curl_found = False
+        version_info = ""
+
+        # Method 1: Try with absolute path and proper subprocess kwargs
         try:
-            result = subprocess.run(["curl", "--version"],
-                                  capture_output=True, text=True, timeout=5)
+            kwargs = get_subprocess_kwargs()
+            result = subprocess.run([curl_path, '--version'],
+                                  timeout=5,
+                                  **kwargs)
+
             if result.returncode == 0:
-                version = result.stdout.split('\n')[0]
-                self.curl_status_label.config(
-                    text=f"✓ curl is installed:\n{version}",
-                    foreground="green")
-                self.curl_validated = True
-            else:
-                self.curl_status_label.config(
-                    text="✗ curl is not installed",
-                    foreground="red")
-                self.show_curl_install_instructions()
-        except (subprocess.TimeoutExpired, FileNotFoundError):
+                curl_found = True
+                version_info = result.stdout.decode('utf-8', errors='ignore').split('\n')[0]
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+            pass
+
+        # Method 2: If not found, try with shell=True (Windows fallback)
+        if not curl_found and sys.platform == 'win32':
+            try:
+                kwargs = get_subprocess_kwargs()
+                # Use shell=True with quoted path
+                cmd = f'"{curl_path}" --version' if ' ' in curl_path else f'{curl_path} --version'
+                result = subprocess.run(cmd,
+                                      shell=True,
+                                      timeout=5,
+                                      **kwargs)
+
+                if result.returncode == 0:
+                    curl_found = True
+                    version_info = result.stdout.decode('utf-8', errors='ignore').split('\n')[0]
+            except (subprocess.TimeoutExpired, Exception):
+                pass
+
+        # Method 3: Last resort - try just 'curl' command
+        if not curl_found:
+            try:
+                kwargs = get_subprocess_kwargs()
+                result = subprocess.run(['curl', '--version'],
+                                      timeout=5,
+                                      **kwargs)
+
+                if result.returncode == 0:
+                    curl_found = True
+                    version_info = result.stdout.decode('utf-8', errors='ignore').split('\n')[0]
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+                pass
+
+        # Update UI based on result
+        if curl_found:
+            self.curl_status_label.config(
+                text=f"✓ curl is installed:\n{version_info}",
+                foreground="green")
+            self.curl_validated = True
+        else:
             self.curl_status_label.config(
                 text="✗ curl is not installed",
                 foreground="red")
@@ -389,15 +565,27 @@ Click 'Next' to begin the installation process.""".format(
 
     def show_curl_install_instructions(self):
         """Show instructions for installing curl"""
+        # Add automatic install button
+        install_btn = ttk.Button(self.curl_button_frame,
+                                text="Install curl Automatically",
+                                command=self.install_curl_automatically)
+        install_btn.pack(side=tk.LEFT, padx=5)
+
+        # Add recheck button
+        recheck_btn = ttk.Button(self.curl_button_frame,
+                                text="Recheck",
+                                command=self.check_curl)
+        recheck_btn.pack(side=tk.LEFT, padx=5)
+
         instructions = ""
         if self.os_type == "Darwin":
-            instructions = "curl is usually pre-installed on macOS.\nIf missing, install Xcode Command Line Tools:\n\nxcode-select --install"
+            instructions = "curl is usually pre-installed on macOS.\nIf missing, we can install Xcode Command Line Tools for you."
         elif self.os_type == "Windows":
-            instructions = "curl is included in Windows 10+.\nIf missing, download from: https://curl.se/windows/"
+            instructions = "curl is included in Windows 10+.\nIf missing, we can try to install it using winget or chocolatey."
         else:  # Linux
-            instructions = "Install curl using your package manager:\n\nUbuntu/Debian: sudo apt-get install curl\nFedora: sudo dnf install curl\nArch: sudo pacman -S curl"
+            instructions = "We can try to install curl using your system's package manager."
 
-        install_frame = ttk.LabelFrame(self.curl_result_frame, text="Installation Instructions", padding=10)
+        install_frame = ttk.LabelFrame(self.curl_result_frame, text="Installation Options", padding=10)
         install_frame.pack(fill=tk.X, pady=10)
 
         install_label = ttk.Label(install_frame, text=instructions, justify=tk.LEFT)
@@ -411,6 +599,136 @@ Click 'Next' to begin the installation process.""".format(
                                "Please install curl and restart the installer.")
             return False
         return True
+
+    def install_curl_automatically(self):
+        """Install curl automatically after user confirmation"""
+        # Ask for confirmation
+        message = "This will attempt to install curl on your system.\n\n"
+
+        if self.os_type == "Darwin":
+            message += "This will run: xcode-select --install\n"
+            message += "You may need to confirm the installation in a popup dialog.\n\n"
+        elif self.os_type == "Windows":
+            message += "This will try to install curl using winget or chocolatey.\n"
+            message += "Administrator privileges may be required.\n\n"
+        else:  # Linux
+            message += "This will run the appropriate package manager command.\n"
+            message += "Administrator privileges (sudo) may be required.\n\n"
+
+        message += "Do you want to continue?"
+
+        if not messagebox.askyesno("Install curl", message):
+            return
+
+        # Update status
+        self.curl_status_label.config(text="Installing curl...", foreground="blue")
+        self.root.update()
+
+        # Disable install button during installation
+        for widget in self.curl_button_frame.winfo_children():
+            widget.config(state=tk.DISABLED)
+
+        # Run installation in thread
+        thread = threading.Thread(target=self._install_curl_thread)
+        thread.daemon = True
+        thread.start()
+
+    def _install_curl_thread(self):
+        """Thread function to install curl"""
+        success = False
+        error_msg = ""
+        kwargs = get_subprocess_kwargs()
+
+        try:
+            if self.os_type == "Darwin":
+                # macOS: Install Xcode Command Line Tools
+                result = subprocess.run(["xcode-select", "--install"],
+                                      timeout=60,
+                                      **kwargs)
+                # xcode-select --install returns 1 even on success (prompts user)
+                # We'll consider it successful if it doesn't throw an error
+                success = True
+                error_msg = "Xcode installation dialog should have appeared.\nPlease complete the installation and click 'Recheck'."
+
+            elif self.os_type == "Windows":
+                # Try winget first
+                try:
+                    result = subprocess.run(["winget", "install", "curl.curl"],
+                                          timeout=120,
+                                          **kwargs)
+                    if result.returncode == 0:
+                        success = True
+                    else:
+                        # Try chocolatey
+                        result = subprocess.run(["choco", "install", "curl", "-y"],
+                                              timeout=120,
+                                              **kwargs)
+                        if result.returncode == 0:
+                            success = True
+                        else:
+                            stderr_msg = result.stderr.decode('utf-8', errors='ignore')
+                            error_msg = f"Failed to install using winget or chocolatey.\n{stderr_msg}\nPlease install curl manually."
+                except FileNotFoundError:
+                    error_msg = "Neither winget nor chocolatey found.\nPlease install curl manually from https://curl.se/windows/"
+
+            else:  # Linux
+                # Try to detect package manager and install
+                package_managers = [
+                    (["apt-get", "install", "-y", "curl"], "apt-get"),
+                    (["dnf", "install", "-y", "curl"], "dnf"),
+                    (["yum", "install", "-y", "curl"], "yum"),
+                    (["pacman", "-S", "--noconfirm", "curl"], "pacman"),
+                    (["zypper", "install", "-y", "curl"], "zypper"),
+                ]
+
+                for cmd, pm_name in package_managers:
+                    try:
+                        # Check if package manager exists
+                        check_result = subprocess.run(["which", cmd[0]],
+                                                     timeout=5,
+                                                     **kwargs)
+                        if check_result.returncode == 0:
+                            # Try to install with sudo
+                            full_cmd = ["sudo"] + cmd
+                            result = subprocess.run(full_cmd,
+                                                  timeout=120,
+                                                  **kwargs)
+                            if result.returncode == 0:
+                                success = True
+                                break
+                            else:
+                                stderr_msg = result.stderr.decode('utf-8', errors='ignore')
+                                error_msg = f"Failed to install using {pm_name}.\n{stderr_msg}"
+                    except FileNotFoundError:
+                        continue
+
+                if not success and not error_msg:
+                    error_msg = "Could not detect package manager.\nPlease install curl manually."
+
+        except subprocess.TimeoutExpired:
+            error_msg = "Installation timed out. Please try installing manually."
+        except Exception as e:
+            error_msg = f"Installation failed: {str(e)}"
+
+        # Update UI from main thread
+        if success:
+            self.root.after(0, lambda: self.curl_status_label.config(
+                text=error_msg if error_msg else "✓ curl installation initiated.\nClick 'Recheck' to verify.",
+                foreground="blue"))
+            self.root.after(0, lambda: messagebox.showinfo(
+                "Installation Complete",
+                "curl installation has been initiated.\nClick 'Recheck' to verify the installation."))
+        else:
+            self.root.after(0, lambda: self.curl_status_label.config(
+                text=f"✗ Installation failed:\n{error_msg}",
+                foreground="red"))
+            self.root.after(0, lambda: messagebox.showerror(
+                "Installation Failed",
+                f"Failed to install curl automatically:\n\n{error_msg}"))
+
+        # Re-enable buttons
+        self.root.after(0, lambda: [widget.config(state=tk.NORMAL)
+                                     for widget in self.curl_button_frame.winfo_children()])
 
     # ==================== PAGE 4: Installation ====================
     def create_install_page(self):
@@ -610,11 +928,18 @@ Click 'Next' to begin the installation process.""".format(
             }}
             '''
 
-            subprocess.run(["powershell", "-Command", ps_command],
-                         capture_output=True, text=True, timeout=10)
+            kwargs = get_subprocess_kwargs()
+            result = subprocess.run(["powershell", "-Command", ps_command],
+                                  timeout=10,
+                                  **kwargs)
 
-            self.log(f"✓ Added to PATH: {bin_dir}")
-            self.log("  (Restart terminal for changes to take effect)")
+            if result.returncode == 0:
+                self.log(f"✓ Added to PATH: {bin_dir}")
+                self.log("  (Restart terminal for changes to take effect)")
+            else:
+                stderr_msg = result.stderr.decode('utf-8', errors='ignore')
+                self.log(f"! Could not automatically add to PATH: {stderr_msg}")
+                self.log(f"  Please manually add this directory to PATH: {bin_dir}")
         except Exception as e:
             self.log(f"! Could not automatically add to PATH: {e}")
             self.log(f"  Please manually add this directory to PATH: {bin_dir}")

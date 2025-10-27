@@ -3,6 +3,7 @@
 PyInstaller spec file for CodeKiwi Installer
 Generates cross-platform executables
 """
+import platform
 
 block_cipher = None
 
