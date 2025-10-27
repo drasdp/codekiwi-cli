@@ -100,25 +100,17 @@ echo.
 echo [INFO] Adding CodeKiwi to PATH...
 set NEW_PATH=%INSTALL_DIR%\bin
 
-:: Get current user PATH
-for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v PATH 2^>nul') do set USER_PATH=%%b
+:: Use PowerShell to safely handle PATH with special characters
+powershell -NoProfile -Command "$installPath = '%NEW_PATH%'; $currentPath = [Environment]::GetEnvironmentVariable('PATH', 'User'); if ($currentPath -notlike \"*$installPath*\") { if ($currentPath) { $newPath = $currentPath + ';' + $installPath } else { $newPath = $installPath }; [Environment]::SetEnvironmentVariable('PATH', $newPath, 'User'); Write-Host '[OK] Added to PATH:' $installPath } else { Write-Host '[INFO] Already in PATH:' $installPath }"
 
-:: Check if already in PATH
-echo !USER_PATH! | findstr /C:"%NEW_PATH%" >nul
 if errorlevel 1 (
-    :: Add to PATH
-    if defined USER_PATH (
-        setx PATH "%USER_PATH%;%NEW_PATH%" >nul 2>&1
-    ) else (
-        setx PATH "%NEW_PATH%" >nul 2>&1
-    )
-    echo [OK] Added to PATH: %NEW_PATH%
-
-    :: Also update current session PATH
-    set PATH=%PATH%;%NEW_PATH%
-) else (
-    echo [INFO] Already in PATH: %NEW_PATH%
+    echo [ERROR] Failed to update PATH
+    echo         You may need to add '%NEW_PATH%' to your PATH manually
 )
+
+:: Also update current session PATH
+set PATH=%PATH%;%NEW_PATH%
+echo.
 
 :: Clean up temp files
 del %TEMP_JSON% 2>nul
