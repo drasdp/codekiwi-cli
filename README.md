@@ -460,7 +460,8 @@ docker-compose -f docker-compose.dev.yaml build
 
 1. Docker Hub에 이미지 푸시:
 ```bash
-docker build -t drasdp/codekiwi-runtime:latest ./runtime
+docker buildx build --platform linux/amd64,linux/arm64 -t drasdp/codekiwi-runtime:latest --push ./runtime
+
 docker push drasdp/codekiwi-runtime:latest
 ```
 
