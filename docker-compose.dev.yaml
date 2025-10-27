@@ -11,6 +11,7 @@ services:
     volumes:
       - ${WORKSPACE_DIR}:${CODEKIWI_WORKSPACE_DIR:-/workspace}
       - ${AUTH_DIR:-~/.codekiwi/opencode}:/root/.local/share/opencode
+      - node_modules:/workspace/node_modules
     environment:
       - INSTALL_TEMPLATE=${INSTALL_TEMPLATE:-${CODEKIWI_INSTALL_TEMPLATE_DEFAULT:-yes}}
     restart: ${CODEKIWI_RESTART_POLICY:-unless-stopped}
@@ -22,3 +23,7 @@ services:
       timeout: 3s
       retries: 30
       start_period: 10s
+
+volumes:
+  node_modules:
+    driver: local
