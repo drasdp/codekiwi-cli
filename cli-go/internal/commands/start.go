@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/drasdp/codekiwi-cli/internal/auth"
 	"github.com/drasdp/codekiwi-cli/internal/config"
 	"github.com/drasdp/codekiwi-cli/internal/docker"
 	"github.com/drasdp/codekiwi-cli/internal/platform"
@@ -75,6 +76,11 @@ func runStart(cmd *cobra.Command, args []string) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Check and setup API key
+	if err := auth.CheckAndSetupAPIKey(cfg.InstallDir); err != nil {
+		return fmt.Errorf("failed to setup API key: %w", err)
 	}
 
 	// Check Docker
