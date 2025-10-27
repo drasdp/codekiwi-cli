@@ -54,7 +54,14 @@ install_template() {
         if [ -f "$WORKSPACE/package.json" ]; then
             echo "📦 의존성을 설치합니다..."
             cd "$WORKSPACE"
-            npm install
+            # Use npm ci if package-lock.json exists (faster and more reliable)
+            if [ -f "$WORKSPACE/package-lock.json" ]; then
+                echo "Using npm ci for faster installation..."
+                npm ci --prefer-offline
+            else
+                echo "Using npm install..."
+                npm install
+            fi
             echo "✅ 의존성 설치 완료!"
         fi
 

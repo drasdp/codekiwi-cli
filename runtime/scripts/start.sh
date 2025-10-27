@@ -29,10 +29,20 @@ if [ -f "$WORKSPACE/package.json" ]; then
     echo "package.json found, starting dev server..."
     cd "$WORKSPACE"
 
-    # Install dependencies if node_modules doesn't exist
-    if [ ! -d "$WORKSPACE/node_modules" ]; then
+    # Install dependencies if node_modules is empty or doesn't exist
+    # Named volume creates the directory but it may be empty
+    if [ ! -d "$WORKSPACE/node_modules/.bin" ] || [ -z "$(ls -A $WORKSPACE/node_modules 2>/dev/null)" ]; then
         echo "Installing dependencies..."
-        npm install
+        # Use npm ci if package-lock.json exists (faster and more reliable)
+        if [ -f "$WORKSPACE/package-lock.json" ]; then
+            echo "Using npm ci for faster installation..."
+            npm ci --prefer-offline
+        else
+            echo "Using npm install..."
+            npm install
+        fi
+    else
+        echo "Dependencies already installed, skipping..."
     fi
 
     echo "Starting devserver in background..."
