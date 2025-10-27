@@ -1,0 +1,36 @@
+# Python virtual environment
+venv/
+env/
+ENV/
+
+# PyInstaller build artifacts
+src/build/
+src/dist/
+src/__pycache__/
+src/*.pyc
+src/*.pyo
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller spec cache
+*.spec~
+
+# macOS
+.DS_Store
+*.app
+
+# Windows
+*.exe
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
