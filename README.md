@@ -34,7 +34,7 @@ Docker 기반의 통합 개발 환경으로, 좌측에는 AI 코드 에디터, �
 #### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-web/main/install/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/install/install.sh | bash
 ```
 
 #### Windows
@@ -42,13 +42,13 @@ curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-web/main/install/in
 Command Prompt(cmd)를 관리자 권한으로 실행한 후:
 
 ```cmd
-curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-web/main/install/install.bat -o %TEMP%\codekiwi-install.bat && %TEMP%\codekiwi-install.bat
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/install/install.bat -o %TEMP%\codekiwi-install.bat && %TEMP%\codekiwi-install.bat
 ```
 
 또는 PowerShell에서:
 
 ```powershell
-curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-web/main/install/install.bat -o %TEMP%\codekiwi-install.bat && %TEMP%\codekiwi-install.bat
+curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/install/install.bat -o %TEMP%\codekiwi-install.bat && %TEMP%\codekiwi-install.bat
 ```
 
 #### 설치 과정 상세
@@ -347,7 +347,7 @@ CodeKiwi 프로젝트를 개발하고 기여하는 방법입니다.
 ## 🏗️ 프로젝트 구조
 
 ```
-codekiwi-web/
+codekiwi-cli/
 ├── cli-go/                   # Go 기반 CLI (v0.2.0+)
 │   ├── cmd/codekiwi/
 │   │   └── main.go          # 메인 엔트리포인트
@@ -386,8 +386,8 @@ codekiwi-web/
 ### 1. 저장소 클론
 
 ```bash
-git clone https://github.com/drasdp/codekiwi-web.git
-cd codekiwi-web
+git clone https://github.com/drasdp/codekiwi-cli.git
+cd codekiwi-cli
 ```
 
 ### 2. 개발 모드 실행
