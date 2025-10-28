@@ -21,3 +21,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+*.toc
+*.pkg
+*.pyz
+*.pyc
+launcher/src/build/
+launcher/src/dist/
+
