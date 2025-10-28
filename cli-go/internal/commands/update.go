@@ -69,21 +69,18 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func updateCLI() error {
-	// Determine the install script URL based on OS
-	var scriptURL string
+	// Use the exact same install commands as in README.md
 	var installCmd *exec.Cmd
 
 	switch runtime.GOOS {
 	case "windows":
-		scriptURL = "https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/install/install.bat"
-		// Download and run batch file
+		// Use the exact command from README.md for Windows
 		installCmd = exec.Command("cmd", "/c",
-			fmt.Sprintf("curl -fsSL %s -o %%TEMP%%\\install.bat && %%TEMP%%\\install.bat", scriptURL))
+			"curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/install/install.bat -o %TEMP%\\codekiwi-install.bat && %TEMP%\\codekiwi-install.bat")
 	case "darwin", "linux":
-		scriptURL = "https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/install/install.sh"
-		// Run install script directly with bash
+		// Use the exact command from README.md for Unix systems
 		installCmd = exec.Command("bash", "-c",
-			fmt.Sprintf("curl -fsSL %s | bash", scriptURL))
+			"curl -fsSL https://raw.githubusercontent.com/drasdp/codekiwi-cli/main/install/install.sh | bash")
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
