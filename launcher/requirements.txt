@@ -1,0 +1,5 @@
+# CodeKiwi Launcher Requirements
+# Note: tkinter is included with Python, no need to install separately
+
+# For building executable
+pyinstaller>=6.0.0
