@@ -119,8 +119,9 @@ class CodeKiwiLauncher:
             messagebox.showerror("Error", "Selected folder does not exist")
             return
 
-        cmd = ["codekiwi", "start", path]
-        self.run_command(cmd)
+        # Add -d for detached mode to run in background
+        cmd = ["codekiwi", "start", path, "-d"]
+        self.run_command(cmd, command_type="start")
         self.status.config(text="Starting project...")
 
     def stop_project(self):
@@ -131,18 +132,18 @@ class CodeKiwiLauncher:
             response = messagebox.askyesno("Stop All", "No project selected. Stop all running instances?")
             if response:
                 cmd = ["codekiwi", "kill", "--all", "--force"]
-                self.run_command(cmd)
+                self.run_command(cmd, command_type="stop")
                 self.status.config(text="Stopping all instances...")
             return
 
         cmd = ["codekiwi", "kill", path, "--force"]
-        self.run_command(cmd)
+        self.run_command(cmd, command_type="stop")
         self.status.config(text="Stopping project...")
 
     def list_instances(self):
         """List running CodeKiwi instances"""
         cmd = ["codekiwi", "list", "--all"]
-        self.run_command(cmd)
+        self.run_command(cmd, command_type="list")
         self.status.config(text="Listing instances...")
 
     def update_codekiwi(self):
@@ -150,24 +151,38 @@ class CodeKiwiLauncher:
         response = messagebox.askyesno("Update", "Update CodeKiwi CLI and Docker images?")
         if response:
             cmd = ["codekiwi", "update"]
-            self.run_command(cmd)
+            self.run_command(cmd, command_type="update")
             self.status.config(text="Updating CodeKiwi...")
 
-    def run_command(self, cmd):
+    def run_command(self, cmd, command_type=None):
         """Execute command asynchronously"""
         # Display command
         self.output.insert(tk.END, f"\n$ {' '.join(cmd)}\n", "command")
         self.output.see(tk.END)
 
-        # Disable buttons during execution
-        self.set_buttons_state(tk.DISABLED)
+        # Selective button disabling based on command type
+        if command_type == "start":
+            # Only disable START button for start commands
+            self.start_btn.config(state=tk.DISABLED)
+        elif command_type == "stop":
+            # Only disable STOP button for stop commands
+            self.stop_btn.config(state=tk.DISABLED)
+        elif command_type == "list":
+            # Only disable LIST button for list commands
+            self.list_btn.config(state=tk.DISABLED)
+        elif command_type == "update":
+            # Only disable UPDATE button for update commands
+            self.update_btn.config(state=tk.DISABLED)
+        else:
+            # Default: disable all buttons
+            self.set_buttons_state(tk.DISABLED)
 
         # Start command in thread
-        thread = threading.Thread(target=self._execute_command, args=(cmd,))
+        thread = threading.Thread(target=self._execute_command, args=(cmd, command_type))
         thread.daemon = True
         thread.start()
 
-    def _execute_command(self, cmd):
+    def _execute_command(self, cmd, command_type=None):
         """Execute command and capture output"""
         try:
             # Start process with UTF-8 encoding to avoid cp949 codec errors
@@ -208,8 +223,14 @@ class CodeKiwiLauncher:
 
             # Display result
             if self.process.returncode == 0:
-                self.output.insert(tk.END, "✓ Command completed successfully\n", "success")
-                self.status.config(text="Command completed")
+                if command_type == "start":
+                    self.output.insert(tk.END, "✓ Project started in background (detached mode)\n", "success")
+                    self.output.insert(tk.END, "   Use LIST to see running instances\n", "info")
+                    self.output.insert(tk.END, "   Use STOP to stop the project\n", "info")
+                    self.status.config(text="Project started in background")
+                else:
+                    self.output.insert(tk.END, "✓ Command completed successfully\n", "success")
+                    self.status.config(text="Command completed")
             else:
                 self.output.insert(tk.END, f"✗ Command failed (exit code: {self.process.returncode})\n", "error")
                 self.status.config(text="Command failed")
@@ -228,8 +249,17 @@ class CodeKiwiLauncher:
 
         finally:
             self.process = None
-            # Re-enable buttons
-            self.root.after(0, lambda: self.set_buttons_state(tk.NORMAL))
+            # Re-enable buttons based on command type
+            if command_type == "start":
+                self.root.after(0, lambda: self.start_btn.config(state=tk.NORMAL))
+            elif command_type == "stop":
+                self.root.after(0, lambda: self.stop_btn.config(state=tk.NORMAL))
+            elif command_type == "list":
+                self.root.after(0, lambda: self.list_btn.config(state=tk.NORMAL))
+            elif command_type == "update":
+                self.root.after(0, lambda: self.update_btn.config(state=tk.NORMAL))
+            else:
+                self.root.after(0, lambda: self.set_buttons_state(tk.NORMAL))
 
     def set_buttons_state(self, state):
         """Enable/disable buttons"""
